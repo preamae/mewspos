@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <!-- 1. TAKSİT TABLOSU TEMPLATE -->
+    <template id="product_installment_display" name="Product Installment Display">
+        <t t-set="installments" t-value="product._get_installment_display_data()"/>
+        
+        <div class="o_wsale_product_details_content_section o_wsale_product_installments mb-4" t-if="installments">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0">
+                        <i class="fa fa-credit-card"/> Taksit Seçenekleri
+                    </h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="row g-0">
+                        <t t-foreach="installments" t-as="bank">
+                            <div class="col-lg-6 col-md-12 p-3">
+                                <div class="card h-100 border">
+                                    <div class="card-header text-white text-center py-2" t-att-style="'background-color: ' + bank.get('color', '#6c757d')">
+                                        <h5 class="mb-0" t-esc="bank['bank_name']"/>
+                                    </div>
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr class="text-center">
+                                                <th style="width: 25%">Taksit</th>
+                                                <th style="width: 40%">Aylık</th>
+                                                <th style="width: 35%">Toplam</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="bank['installments']" t-as="inst">
+                                                <tr class="text-center">
+                                                    <td>
+                                                        <strong t-esc="inst['installment_count']"/>
+                                                    </td>
+                                                    <td>
+                                                        <strong class="text-success">
+                                                            <t t-esc="'{:,.2f}'.format(inst['installment_amount'])"/> TL
+                                                        </strong>
+                                                    </td>
+                                                    <td class="text-muted">
+                                                        <t t-esc="'{:,.2f}'.format(inst['total_amount'])"/> TL
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 2. ÜRÜN SAYFASINA EKLE - DOĞRU KONUMA -->
+    <template id="product_page_installments" inherit_id="website_sale.product" name="Product Installments">
+        <!-- Ürün detay sections'ından SONRA ekle -->
+        <xpath expr="//div[hasclass('o_wsale_product_details_content_section_cta')]" position="after">
+            <t t-call="mews_pos.product_installment_display"/>
+        </xpath>
+    </template>
+
+    <!-- 3. ÖDEME SAYFASI - TAKSİT SEÇİMİ -->
+    <template id="payment_installment_options" name="Payment Installment Options">
+        <t t-set="order" t-value="request.website.sale_get_order()"/>
+        <t t-set="amount" t-value="order.amount_total if order else 0"/>
+        <t t-set="provider" t-value="provider if provider else None"/>
+        
+        <div class="o_payment_installments mb-3" t-if="provider and provider.code == 'mews_pos' and amount >= provider.mews_min_installment_amount">
+            <label class="col-form-label">Ödeme Seçenekleri</label>
+            
+            <t t-set="installment_opts" t-value="provider.get_available_installments(amount)"/>
+            
+            <div t-if="installment_opts" class="list-group">
+                <t t-foreach="installment_opts" t-as="bank_opt">
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2" t-esc="bank_opt['bank']['name']"/>
+                        <t t-foreach="bank_opt['installments']" t-as="inst">
+                            <label class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div class="form-check mb-0">
+                                    <input type="radio" 
+                                           class="form-check-input" 
+                                           name="installment_option" 
+                                           t-att-value="inst['installment_count']"
+                                           t-att-data-bank="bank_opt['bank']['id']"
+                                           t-att-data-amount="inst['installment_amount']"
+                                           t-att-data-total="inst['total_amount']"
+                                           t-att-checked="'checked' if inst['installment_count'] == 1 else None"/>
+                                    <label class="form-check-label">
+                                        <strong t-if="inst['installment_count'] == 1">Peşin</strong>
+                                        <strong t-else="">
+                                            <t t-esc="inst['installment_count']"/> Taksit
+                                        </strong>
+                                    </label>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold text-success">
+                                        <t t-esc="'{: ,.2f}'.format(inst['installment_amount'])"/> TL / AY
+                                    </div>
+                                    <small class="text-muted">
+                                        Toplam: <t t-esc="'{:,.2f}'.format(inst['total_amount'])"/> TL
+                                    </small>
+                                </div>
+                            </label>
+                        </t>
+                    </div>
+                </t>
+            </div>
+            
+            <div t-else="" class="alert alert-info">
+                Bu sipariş için taksit seçeneği bulunmamaktadır.
+            </div>
+        </div>
+    </template>
+
+    <!-- 4. ÖDEME FORMUNA EKLE -->
+    <template id="payment_form_installments" inherit_id="payment.payment_form" name="Payment Form Installments">
+        <xpath expr="//div[@id='payment_method']" position="after">
+            <t t-call="mews_pos.payment_installment_options"/>
+        </xpath>
+    </template>
+
+</odoo>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="installment_calculator_wizard_form" model="ir.ui.view">
+        <field name="name">mews.pos.installment.calculator.wizard.form</field>
+        <field name="model">mews.pos.installment.calculator.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group>
+                        <field name="amount"/>
+                        <field name="bank_id"/>
+                        <field name="category_id"/>
+                    </group>
+                </group>
+                <separator string="Taksit Seçenekleri"/>
+                <field name="result_html" readonly="1" nolabel="1"/>
+                <footer>
+                    <button string="Kapat" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="installment_calculator_wizard_action" model="ir.actions.act_window">
+        <field name="name">Taksit Hesapla</field>
+        <field name="res_model">mews.pos.installment.calculator.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="mews_pos_menu_calculator"
+              name="Taksit Hesapla"
+              parent="mews_pos_menu_root"
+              action="installment_calculator_wizard_action"
+              sequence="30"/>
+</odoo>

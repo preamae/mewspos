@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_category_form_mews_pos" model="ir.ui.view">
+        <field name="name">product.category.form.mews_pos</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.product_category_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/sheet" position="inside">
+                <group string="Taksit Ayarları" name="mews_installment_settings">
+                    <group string="Genel Ayarlar">
+                        <field name="installment_allowed"/>
+                        <field name="max_installment_global"/>
+                    </group>
+                </group>
+                <separator string="Banka Bazlı Taksit Kısıtlamaları"/>
+                <field name="installment_restriction_ids">
+                    <list editable="bottom">
+                        <field name="bank_id"/>
+                        <field name="installment_allowed"/>
+                        <field name="min_installment"/>
+                        <field name="max_installment"/>
+                        <field name="blocked_installments"/>
+                        <field name="notes"/>
+                    </list>
+                </field>
+            </xpath>
+        </field>
+    </record>
+</odoo>

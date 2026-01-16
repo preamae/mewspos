@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Rapor Görünümü -->
+    <record id="mews_pos_transaction_report_tree" model="ir.ui.view">
+        <field name="name">mews.pos.transaction.report.tree</field>
+        <field name="model">mews.pos.transaction.report</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="date"/>
+                <field name="bank_name"/>
+                <field name="transaction_count"/>
+                <field name="success_count"/>
+                <field name="failed_count"/>
+                <field name="cancelled_count"/>
+                <field name="refunded_count"/>
+                <field name="total_amount" sum="Toplam"/>
+                <field name="success_amount" sum="Toplam"/>
+                <field name="refunded_amount" sum="Toplam"/>
+                <field name="net_amount" sum="Toplam"/>
+                <field name="avg_installment"/>
+                <field name="interest_amount" sum="Toplam"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="mews_pos_transaction_report_pivot" model="ir.ui.view">
+        <field name="name">mews.pos.transaction.report.pivot</field>
+        <field name="model">mews.pos.transaction.report</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="date" type="row" interval="day"/>
+                <field name="bank_name" type="col"/>
+                <field name="success_amount" type="measure"/>
+                <field name="transaction_count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="mews_pos_transaction_report_graph" model="ir.ui.view">
+        <field name="name">mews.pos.transaction.report.graph</field>
+        <field name="model">mews.pos.transaction.report</field>
+        <field name="arch" type="xml">
+            <graph type="bar">
+                <field name="date" type="row"/>
+                <field name="success_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="mews_pos_transaction_report_action" model="ir.actions.act_window">
+        <field name="name">İşlem Raporu</field>
+        <field name="res_model">mews.pos.transaction.report</field>
+        <field name="view_mode">tree,pivot,graph</field>
+    </record>
+
+    <menuitem id="mews_pos_menu_reports"
+              name="Raporlar"
+              parent="mews_pos_menu_root"
+              sequence="40"/>
+
+    <menuitem id="mews_pos_menu_transaction_report"
+              name="İşlem Raporu"
+              parent="mews_pos_menu_reports"
+              action="mews_pos_transaction_report_action"
+              sequence="10"/>
+</odoo>

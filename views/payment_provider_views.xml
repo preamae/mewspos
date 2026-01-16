@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="payment_provider_form_mews_pos" model="ir.ui.view">
+        <field name="name">payment.provider.form.mews_pos</field>
+        <field name="model">payment.provider</field>
+        <field name="inherit_id" ref="payment.payment_provider_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='provider_credentials']" position="after">
+                <group string="Mews POS Ayarları" 
+                       invisible="code != 'mews_pos'"
+                       name="mews_pos_settings">
+                    <group>
+                        <field name="mews_bank_ids" widget="many2many_tags"/>
+                        <field name="mews_show_installments"/>
+                        <field name="mews_default_installment"/>
+                    </group>
+                    <group>
+                        <field name="mews_max_installment"/>
+                        <field name="mews_min_installment_amount"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Banka Listesi -->
+    <record id="mews_pos_bank_list" model="ir.ui.view">
+        <field name="name">mews.pos.bank.list</field>
+        <field name="model">mews.pos.bank</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="gateway_type"/>
+                <field name="payment_model"/>
+                <field name="environment" widget="badge" 
+                       decoration-success="environment == 'production'"
+                       decoration-warning="environment == 'test'"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Banka Formu -->
+    <record id="mews_pos_bank_form" model="ir.ui.view">
+        <field name="name">mews.pos.bank.form</field>
+        <field name="model">mews.pos.bank</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object"
+                                class="oe_stat_button" icon="fa-archive">
+                            <field name="active" widget="boolean_button"
+                                   options='{"terminology": "archive"}'/>
+                        </button>
+                    </div>
+                    <field name="logo" widget="image" class="oe_avatar"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Banka Adı"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Genel Bilgiler">
+                            <field name="code"/>
+                            <field name="sequence"/>
+                            <field name="gateway_type"/>
+                            <field name="payment_model"/>
+                            <field name="environment" widget="radio"/>
+                        </group>
+                        <group string="API Bilgileri">
+                            <field name="merchant_id"/>
+                            <field name="terminal_id"/>
+                            <field name="username"/>
+                            <field name="password" password="True"/>
+                            <field name="store_key" password="True"/>
+                            <field name="client_id"/>
+                        </group>
+                    </group>
+                    <group string="Gateway URL'leri">
+                        <field name="payment_api_url"/>
+                        <field name="gateway_3d_url"/>
+                        <field name="gateway_3d_host_url"/>
+                    </group>
+                    <notebook>
+                        <page string="Taksit Yapılandırması" name="installments">
+                            <field name="installment_config_ids">
+                                <list editable="bottom">
+                                    <field name="installment_count"/>
+                                    <field name="interest_rate"/>
+                                    <field name="commission_rate"/>
+                                    <field name="min_amount"/>
+                                    <field name="active"/>
+                                    <field name="campaign_active"/>
+                                    <field name="campaign_rate"/>
+                                    <field name="campaign_start_date"/>
+                                    <field name="campaign_end_date"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Kategori Kısıtlamaları" name="restrictions">
+                            <field name="category_restriction_ids">
+                                <list editable="bottom">
+                                    <field name="category_id"/>
+                                    <field name="installment_allowed"/>
+                                    <field name="min_installment"/>
+                                    <field name="max_installment"/>
+                                    <field name="blocked_installments"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Banka Action -->
+    <record id="mews_pos_bank_action" model="ir.actions.act_window">
+        <field name="name">Bankalar</field>
+        <field name="res_model">mews.pos.bank</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Yeni banka ekleyin
+            </p>
+            <p>
+                Sanal POS entegrasyonu için banka tanımları ekleyin.
+            </p>
+        </field>
+    </record>
+
+    <!-- İşlem Listesi -->
+    <record id="mews_pos_transaction_list" model="ir.ui.view">
+        <field name="name">mews.pos.transaction.list</field>
+        <field name="model">mews.pos.transaction</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="transaction_id"/>
+                <field name="create_date"/>
+                <field name="order_id"/>
+                <field name="bank_id"/>
+                <field name="amount"/>
+                <field name="installment_count"/>
+                <field name="total_amount"/>
+                <field name="card_number_masked"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'success'"
+                       decoration-danger="state == 'failed'"
+                       decoration-warning="state == 'pending'"
+                       decoration-info="state == 'processing'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- İşlem Formu -->
+    <record id="mews_pos_transaction_form" model="ir.ui.view">
+        <field name="name">mews.pos.transaction.form</field>
+        <field name="model">mews.pos.transaction</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_cancel" type="object" string="İptal Et"
+                            invisible="state != 'success'" class="btn-secondary"/>
+                    <button name="action_refund" type="object" string="İade Et"
+                            invisible="state not in ['success', 'partial_refund']" class="btn-warning"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,pending,processing,success"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="İşlem Bilgileri">
+                            <field name="transaction_id"/>
+                            <field name="order_id"/>
+                            <field name="bank_id"/>
+                            <field name="processed_at"/>
+                        </group>
+                        <group string="Tutar Bilgileri">
+                            <field name="amount"/>
+                            <field name="currency"/>
+                            <field name="installment_count"/>
+                            <field name="installment_amount"/>
+                            <field name="total_amount"/>
+                            <field name="interest_amount"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Kart Bilgileri">
+                            <field name="card_number_masked"/>
+                            <field name="card_holder_name"/>
+                            <field name="card_type"/>
+                        </group>
+                        <group string="3D Secure">
+                            <field name="is_3d_secure"/>
+                            <field name="threed_status"/>
+                            <field name="md_status"/>
+                            <field name="eci"/>
+                        </group>
+                    </group>
+                    <group string="Banka Yanıtı">
+                        <field name="bank_response_code"/>
+                        <field name="auth_code"/>
+                        <field name="bank_order_id"/>
+                        <field name="rrn"/>
+                        <field name="host_ref_num"/>
+                    </group>
+                    <notebook>
+                        <page string="Yanıt Detayları">
+                            <field name="bank_response_message"/>
+                            <field name="error_message"/>
+                        </page>
+                        <page string="İade İşlemleri" invisible="not refund_ids">
+                            <field name="refund_ids">
+                                <list>
+                                    <field name="create_date"/>
+                                    <field name="amount"/>
+                                    <field name="state"/>
+                                    <field name="refund_ref"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                            <group>
+                                <field name="refunded_amount"/>
+                            </group>
+                        </page>
+                        <page string="Teknik Detaylar">
+                            <group>
+                                <field name="ip_address"/>
+                                <field name="user_agent"/>
+                            </group>
+                            <separator string="İstek Verisi"/>
+                            <field name="request_data"/>
+                            <separator string="Yanıt Verisi"/>
+                            <field name="response_data"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- İşlem Action -->
+    <record id="mews_pos_transaction_action" model="ir.actions.act_window">
+        <field name="name">POS İşlemleri</field>
+        <field name="res_model">mews.pos.transaction</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menü -->
+    <menuitem id="mews_pos_menu_root"
+              name="Mews POS"
+              web_icon="mews_pos,static/description/icon.png"
+              sequence="100"/>
+
+    <menuitem id="mews_pos_menu_config"
+              name="Yapılandırma"
+              parent="mews_pos_menu_root"
+              sequence="10"/>
+
+    <menuitem id="mews_pos_menu_banks"
+              name="Bankalar"
+              parent="mews_pos_menu_config"
+              action="mews_pos_bank_action"
+              sequence="10"/>
+
+    <menuitem id="mews_pos_menu_transactions"
+              name="İşlemler"
+              parent="mews_pos_menu_root"
+              action="mews_pos_transaction_action"
+              sequence="20"/>
+</odoo>

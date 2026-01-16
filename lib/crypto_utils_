@@ -1,0 +1,178 @@
+# -*- coding: utf-8 -*-
+
+import hashlib
+import hmac
+import base64
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
+import logging
+
+_logger = logging.getLogger(__name__)
+
+
+class CryptoUtils:
+    """Kriptografik işlemler için yardımcı sınıf"""
+
+    @staticmethod
+    def sha1_hash(data):
+        """SHA1 hash oluştur"""
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+        return hashlib.sha1(data).hexdigest()
+
+    @staticmethod
+    def sha256_hash(data):
+        """SHA256 hash oluştur"""
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+        return hashlib.sha256(data).hexdigest()
+
+    @staticmethod
+    def sha512_hash(data):
+        """SHA512 hash oluştur"""
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+        return hashlib.sha512(data).hexdigest()
+
+    @staticmethod
+    def md5_hash(data):
+        """MD5 hash oluştur"""
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+        return hashlib.md5(data).hexdigest()
+
+    @staticmethod
+    def hmac_sha256(key, data):
+        """HMAC-SHA256 oluştur"""
+        if isinstance(key, str):
+            key = key.encode('utf-8')
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+        return hmac.new(key, data, hashlib.sha256).hexdigest()
+
+    @staticmethod
+    def base64_encode(data):
+        """Base64 encode"""
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+        return base64.b64encode(data).decode('utf-8')
+
+    @staticmethod
+    def base64_decode(data):
+        """Base64 decode"""
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+        return base64.b64decode(data).decode('utf-8')
+
+    @staticmethod
+    def create_3d_hash_estpos(client_id, order_id, amount, ok_url, fail_url, trans_type, 
+                               installment, rnd, store_key, hash_algorithm='sha512'):
+        """
+        EstPos için 3D hash oluştur
+        HashData = HASH(clientId + orderId + amount + okUrl + failUrl + 
+                        transType + installment + rnd + storeKey)
+        """
+        hash_str = (
+            f"{client_id}{order_id}{amount}{ok_url}{fail_url}"
+            f"{trans_type}{installment}{rnd}{store_key}"
+        )
+        
+        if hash_algorithm == 'sha512':
+            return CryptoUtils.sha512_hash(hash_str)
+        elif hash_algorithm == 'sha256':
+            return CryptoUtils.sha256_hash(hash_str)
+        elif hash_algorithm == 'sha1':
+            return CryptoUtils.sha1_hash(hash_str)
+        else:
+            return CryptoUtils.sha512_hash(hash_str)
+
+    @staticmethod
+    def create_3d_hash_garanti(terminal_id, order_id, amount, success_url, fail_url, 
+                                trans_type, installment, store_key, security_data):
+        """
+        Garanti POS için 3D hash oluştur
+        SecurityData = SHA1(TerminalID + OrderID + Amount + SuccessURL + 
+                            FailURL + Type + Installment + StoreKey + SecurityData)
+        """
+        hash_str = (
+            f"{terminal_id}{order_id}{amount}{success_url}{fail_url}"
+            f"{trans_type}{installment}{store_key}{security_data}"
+        )
+        
+        return CryptoUtils.sha1_hash(hash_str).upper()
+
+    @staticmethod
+    def create_3d_hash_posnet(merchant_id, terminal_id, card_number, amount, 
+                               currency, merchant_pack, store_key):
+        """
+        PosNet için 3D hash oluştur
+        """
+        hash_str = f"{merchant_id};{terminal_id};{card_number};{amount};{currency};{merchant_pack};{store_key}"
+        return CryptoUtils.sha256_hash(hash_str).upper()
+
+    @staticmethod
+    def create_3d_hash_payfor(merchant_id, terminal_id, total_amount, 
+                               order_id, success_url, fail_url, rnd, store_key):
+        """
+        PayFor için 3D hash oluştur
+        """
+        hash_str = (
+            f"{merchant_id}{terminal_id}{total_amount}{order_id}"
+            f"{success_url}{fail_url}{rnd}{store_key}"
+        )
+        return CryptoUtils.sha512_hash(hash_str).upper()
+
+    @staticmethod
+    def create_hash_akbank(merchant_id, terminal_id, order_id, amount, currency,
+                           installment, store_key):
+        """
+        Akbank POS için hash oluştur
+        """
+        hash_str = f"{merchant_id}{terminal_id}{order_id}{amount}{currency}{installment}{store_key}"
+        return CryptoUtils.sha256_hash(hash_str)
+
+    @staticmethod
+    def encrypt_3des(key, data):
+        """3DES şifreleme"""
+        if isinstance(key, str):
+            key = key.encode('utf-8')
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+        
+        # Padding ekle
+        padder = padding.PKCS7(64).padder()
+        padded_data = padder.update(data) + padder.finalize()
+        
+        # 3DES şifreleme
+        cipher = Cipher(
+            algorithms.TripleDES(key[: 24]),
+            modes.ECB(),
+            backend=default_backend()
+        )
+        encryptor = cipher.encryptor()
+        encrypted = encryptor.update(padded_data) + encryptor.finalize()
+        
+        return base64.b64encode(encrypted).decode('utf-8')
+
+    @staticmethod
+    def decrypt_3des(key, encrypted_data):
+        """3DES şifre çözme"""
+        if isinstance(key, str):
+            key = key.encode('utf-8')
+        
+        encrypted_bytes = base64.b64decode(encrypted_data)
+        
+        cipher = Cipher(
+            algorithms.TripleDES(key[: 24]),
+            modes.ECB(),
+            backend=default_backend()
+        )
+        decryptor = cipher.decryptor()
+        decrypted_padded = decryptor.update(encrypted_bytes) + decryptor.finalize()
+        
+        # Padding kaldır
+        unpadder = padding.PKCS7(64).unpadder()
+        decrypted = unpadder.update(decrypted_padded) + unpadder.finalize()
+        
+        return decrypted.decode('utf-8')

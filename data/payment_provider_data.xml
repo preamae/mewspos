@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- NOT:  noupdate="0" yapıyoruz ki her upgrade'de güncelleme yapsın -->
+    <data noupdate="0">
+        
+        <!-- 1. BANKALAR -->
+        <record id="mews_pos_bank_akbank" model="mews.pos.bank">
+            <field name="name">Akbank</field>
+            <field name="code">akbank</field>
+            <field name="sequence">10</field>
+            <field name="gateway_type">akbank_pos</field>
+            <field name="payment_model">3d_secure</field>
+            <field name="environment">test</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_bank_garanti" model="mews.pos.bank">
+            <field name="name">Garanti BBVA</field>
+            <field name="code">garanti</field>
+            <field name="sequence">20</field>
+            <field name="gateway_type">garanti_pos</field>
+            <field name="payment_model">3d_secure</field>
+            <field name="environment">test</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_bank_yapikredi" model="mews.pos.bank">
+            <field name="name">YapıKredi</field>
+            <field name="code">yapikredi</field>
+            <field name="sequence">30</field>
+            <field name="gateway_type">posnet</field>
+            <field name="payment_model">3d_secure</field>
+            <field name="environment">test</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_bank_isbank" model="mews.pos.bank">
+            <field name="name">İşbank</field>
+            <field name="code">isbank</field>
+            <field name="sequence">40</field>
+            <field name="gateway_type">estv3_pos</field>
+            <field name="payment_model">3d_secure</field>
+            <field name="environment">test</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- 2. TAKSİTLER - AKBANK -->
+        <record id="mews_pos_installment_akbank_2" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_akbank"/>
+            <field name="installment_count">2</field>
+            <field name="interest_rate">0.0</field>
+            <field name="commission_rate">2.50</field>
+            <field name="min_amount">100.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_installment_akbank_3" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_akbank"/>
+            <field name="installment_count">3</field>
+            <field name="interest_rate">0.0</field>
+            <field name="commission_rate">2.80</field>
+            <field name="min_amount">150.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_installment_akbank_6" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_akbank"/>
+            <field name="installment_count">6</field>
+            <field name="interest_rate">1.49</field>
+            <field name="commission_rate">3.50</field>
+            <field name="min_amount">300.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_installment_akbank_12" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_akbank"/>
+            <field name="installment_count">12</field>
+            <field name="interest_rate">2.49</field>
+            <field name="commission_rate">4.50</field>
+            <field name="min_amount">750.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- 3. TAKSİTLER - GARANTİ -->
+        <record id="mews_pos_installment_garanti_2" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_garanti"/>
+            <field name="installment_count">2</field>
+            <field name="interest_rate">0.0</field>
+            <field name="commission_rate">2.45</field>
+            <field name="min_amount">100.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_installment_garanti_6" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_garanti"/>
+            <field name="installment_count">6</field>
+            <field name="interest_rate">1.55</field>
+            <field name="commission_rate">3.45</field>
+            <field name="min_amount">300.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_installment_garanti_12" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_garanti"/>
+            <field name="installment_count">12</field>
+            <field name="interest_rate">2.55</field>
+            <field name="commission_rate">4.45</field>
+            <field name="min_amount">750.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- ✅ 4. PAYMENT PROVIDER - OTOMATİK OLUŞTUR -->
+        <record id="payment_provider_mews_pos" model="payment.provider">
+            <field name="name">Kredi Kartı (Taksitli)</field>
+            <field name="code">mews_pos</field>
+            <field name="state">enabled</field>
+            <field name="is_published" eval="True"/>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="mews_show_installments" eval="True"/>
+            <field name="mews_default_installment">1</field>
+            <field name="mews_max_installment">12</field>
+            <field name="mews_min_installment_amount">100.0</field>
+            <field name="mews_bank_ids" eval="[(6, 0, [ref('mews_pos_bank_akbank'), ref('mews_pos_bank_garanti'), ref('mews_pos_bank_yapikredi'), ref('mews_pos_bank_isbank')])]"/>
+        </record>
+
+    </data>
+</odoo>

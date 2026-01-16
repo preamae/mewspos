@@ -1,0 +1,105 @@
+# -*- coding: utf-8 -*-
+
+from odoo import models, fields, api, _
+
+
+class PaymentProvider(models.Model):
+    _inherit = 'payment.provider'
+
+    # Mews POS için özel fieldlar
+    mews_bank_ids = fields.Many2many(
+        'mews.pos.bank',
+        'payment_provider_mews_bank_rel',
+        'provider_id',
+        'bank_id',
+        string='Mews POS Bankaları',
+        help='Bu ödeme sağlayıcısı için kullanılabilir bankalar'
+    )
+    
+    mews_show_installments = fields.Boolean(
+        string='Taksit Seçeneklerini Göster',
+        default=True,
+        help='Ödeme sayfasında taksit seçeneklerini göster'
+    )
+    
+    mews_default_installment = fields. Integer(
+        string='Varsayılan Taksit',
+        default=1,
+        help='Varsayılan seçili taksit sayısı'
+    )
+    
+    mews_max_installment = fields.Integer(
+        string='Maksimum Taksit',
+        default=12,
+        help='Gösterilecek maksimum taksit sayısı'
+    )
+    
+    mews_min_installment_amount = fields. Float(
+        string='Minimum Taksit Tutarı',
+        digits=(12, 2),
+        default=0.0,
+        help='Taksitli ödemeler için minimum sipariş tutarı'
+    )
+
+    def get_available_installments(self, amount, category_ids=None):
+        """Payment provider için mevcut taksit seçeneklerini getir"""
+        self.ensure_one()
+        
+        if not self.mews_show_installments or amount < self.mews_min_installment_amount:
+            return []
+        
+        result = []
+        banks = self.mews_bank_ids if self.mews_bank_ids else self.env['mews. pos.bank'].search([('active', '=', True)])
+        
+        for bank in banks: 
+            bank_installments = []
+            
+            configs = bank.installment_config_ids.filtered(
+                lambda c: c.active and c.min_amount <= amount
+            )
+            
+            for config in configs: 
+                if config.installment_count > self.mews_max_installment:
+                    continue
+                    
+                inst_data = config.calculate_installment(amount)
+                inst_data['bank_id'] = bank.id
+                inst_data['bank_name'] = bank.name
+                inst_data['bank_code'] = bank.code
+                
+                # Kategori kısıtlamalarını kontrol et
+                if category_ids:
+                    restrictions = bank.category_restriction_ids.filtered(
+                        lambda r: r.category_id. id in category_ids
+                    )
+                    
+                    if restrictions:
+                        max_allowed = min(r.max_installment for r in restrictions)
+                        if inst_data['installment_count'] > max_allowed:
+                            continue
+                        
+                        blocked = []
+                        for r in restrictions: 
+                            blocked.extend(r.get_blocked_installment_list())
+                        if inst_data['installment_count'] in blocked:
+                            continue
+                        
+                        if not all(r.installment_allowed for r in restrictions):
+                            continue
+                
+                bank_installments.append(inst_data)
+            
+            if bank_installments:
+                result. append({
+                    'bank':  {
+                        'id': bank.id,
+                        'name': bank.name,
+                        'code': bank.code,
+                    },
+                    'installments':  sorted(
+                        bank_installments,
+                        key=lambda x: x['installment_count']
+                    )
+                })
+        
+        return result

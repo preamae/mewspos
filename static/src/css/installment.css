@@ -1,0 +1,35 @@
+/* Taksit Seçenekleri Stilleri */
+#o_payment_installments_container {
+    margin-top: 20px;
+}
+
+.bank-info-display {
+    border-left: 4px solid #005eb8;
+    background-color: #f8f9fa;
+}
+
+.bank-logo {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+}
+
+.card-header {
+    border-radius: 8px 8px 0 0 !important;
+}
+
+.form-check-input:checked {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.form-check-label {
+    cursor: pointer;
+}
+
+.badge {
+    font-size: 0.75em;
+}

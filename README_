@@ -1,0 +1,17 @@
+# Mews POS - Odoo 19 Sanal POS Entegrasyonu
+
+## Özellikler
+
+- ✅ **Saf Python İmplementasyonu** - PHP gerektirmez
+- ✅ **13+ Türk Bankası Desteği**
+- ✅ **Kategori Bazlı Taksit Kısıtlaması**
+- ✅ **3D Secure / Non-Secure Ödeme**
+- ✅ **SOAP Desteği** (Zeep ile Kuveyt Türk)
+- ✅ **Detaylı Raporlama**
+
+## Kurulum
+
+###  1. Bağımlılıkları Yükleyin
+
+```bash
+pip3 install -r requirements.txt

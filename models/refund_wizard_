@@ -1,0 +1,2 @@
+_name = 'mews.pos.refund.wizard'
+transaction_id = fields.Many2one('mews.pos.transaction', ...)

@@ -1,0 +1,23 @@
+.mews-card-preview {
+    background: linear-gradient(135deg, #2b5876, #4e4376);
+    color: #fff;
+    min-height: 200px;
+    border-radius: 16px;
+}
+
+.mews-card-preview .chip {
+    width: 36px;
+    height: 26px;
+    border-radius: 6px;
+    background: radial-gradient(circle at 30% 30%, #f5f5f5, #c9c9c9);
+}
+
+.mews-card-preview .card_number_preview {
+    letter-spacing: 2px;
+}
+
+.mews-card-preview .fullname_preview,
+.mews-card-preview .date_month_preview,
+.mews-card-preview .date_year_preview {
+    text-transform: uppercase;
+}

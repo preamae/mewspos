@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="pos_payment_form" name="POS Ödeme Formu">
+        <t t-call="website.layout">
+            <div class="container mt-5">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Ödeme Bilgileri</h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Taksit Seçenekleri -->
+                        <div class="row mb-4" t-if="installments">
+                            <div class="col-12">
+                                <h5>Taksit Seçenekleri</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Taksit</th>
+                                                <th>Taksit Tutarı</th>
+                                                <th>Toplam Tutar</th>
+                                                <th>Seç</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr t-foreach="installments" t-as="inst">
+                                                <td>
+                                                    <span t-esc="inst.label"/>
+                                                    <t t-if="inst.get('interest_amount', 0) > 0">
+                                                        <br/>
+                                                        <small class="text-muted">
+                                                            (+<t t-esc="'%.2f' % inst.interest_amount"/> TL faiz)
+                                                        </small>
+                                                    </t>
+                                                </td>
+                                                <td>
+                                                    <span t-esc="'%.2f' % inst.installment_amount"/> TL
+                                                </td>
+                                                <td>
+                                                    <span t-esc="'%.2f' % inst.total_amount"/> TL
+                                                    <t t-if="inst.installment > 1">
+                                                        <br/>
+                                                        <small class="text-muted">
+                                                            (<t t-esc="'%.2f' % amount"/> TL + faiz)
+                                                        </small>
+                                                    </t>
+                                                </td>
+                                                <td>
+                                                    <input type="radio" 
+                                                           name="installment" 
+                                                           t-att-value="inst.installment"
+                                                           t-att-class="'installment-option'"
+                                                           t-att-data-installment-amount="inst.installment_amount"
+                                                           t-att-data-total-amount="inst.total_amount"/>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Kredi Kartı Formu -->
+                        <form t-att-id="'payment_form_' + provider_id" 
+                              t-att-action="payment_form.action" 
+                              method="POST">
+                            <div class="row">
+                                <t t-foreach="payment_form.inputs" t-as="input">
+                                    <input type="hidden" 
+                                           t-att-name="input[0]" 
+                                           t-att-value="input[1]"/>
+                                </t>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">Kart Numarası</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="card_number" 
+                                           maxlength="16" 
+                                           required
+                                           placeholder="1234 5678 9012 3456"/>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Son Kullanma Ay</label>
+                                    <select class="form-select" name="expiry_month" required>
+                                        <option value="">Ay</option>
+                                        <t t-foreach="range(1, 13)" t-as="month">
+                                            <option t-att-value="month">
+                                                <t t-esc="str(month).zfill(2)"/>
+                                            </option>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Son Kullanma Yıl</label>
+                                    <select class="form-select" name="expiry_year" required>
+                                        <option value="">Yıl</option>
+                                        <t t-foreach="range(datetime.now().year, datetime.now().year + 11)" t-as="year">
+                                            <option t-att-value="str(year)[-2:]">
+                                                <t t-esc="year"/>
+                                            </option>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">CVV</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="cvv" 
+                                           maxlength="3" 
+                                           required
+                                           placeholder="123"/>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">Kart Üzerindeki İsim</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="card_holder" 
+                                           required
+                                           placeholder="AD SOYAD"/>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                                        Ödemeyi Tamamla
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <!-- JavaScript -->
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                // Taksit seçimini yönet
+                                const installmentOptions = document.querySelectorAll('.installment-option');
+                                const amountDisplay = document.querySelector('#total-amount');
+                                
+                                installmentOptions.forEach(option => {
+                                    option.addEventListener('change', function() {
+                                        const totalAmount = this.getAttribute('data-total-amount');
+                                        if (amountDisplay) {
+                                            amountDisplay.textContent = totalAmount + ' TL';
+                                        }
+                                    });
+                                });
+                                
+                                // Kart numarası formatı
+                                const cardNumberInput = document.querySelector('input[name="card_number"]');
+                                if (cardNumberInput) {
+                                    cardNumberInput.addEventListener('input', function(e) {
+                                        let value = e.target.value.replace(/\D/g, '');
+                                        value = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+                                        e.target.value = value.substring(0, 19);
+                                    });
+                                }
+                            });
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

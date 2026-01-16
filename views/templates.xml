@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Mews POS provider için inline kart formu -->
+    <template id="mews_pos_inline_form" name="Mews POS Inline Form">
+        <!--
+            Bu template, Odoo 19'da payment provider'ların inline_form_view_id
+            olarak kullandığı bir snippet. Eğer provider kaydında bu template'i
+            inline_form_view_id olarak atarsan, otomatik olarak o_payment_inline_form içine yüklenir.
+
+            Alternatif:  payment.method_form inherit et ve provider-code kontrolü yap.
+        -->
+        <div class="mews-pos-payment-form mt-3"
+             t-att-data-amount="amount"
+             t-att-data-category-ids="category_ids if category_ids else ''">
+            <div class="row">
+                <!-- SOL:  Kart bilgileri -->
+                <div class="col-12 col-lg-6">
+                    <div class="form-group mb-3">
+                        <label for="card_number" class="form-label">Kart numarası</label>
+                        <input type="text"
+                               id="card_number"
+                               name="card_number"
+                               maxlength="19"
+                               inputmode="numeric"
+                               class="form-control"
+                               placeholder="••••  ••••  ••••  ••••"
+                               autocomplete="cc-number"/>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="card_name" class="form-label">Kart üzerindeki isim</label>
+                        <input type="text"
+                               id="card_name"
+                               name="card_name"
+                               class="form-control"
+                               placeholder="Kart sahibinin adı soyadı"
+                               autocomplete="cc-name"/>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label">Son kullanma tarihi</label>
+                            <select id="card_month" name="card_month" class="form-select" autocomplete="cc-exp-month">
+                                <option value="">AY</option>
+                                <t t-foreach="range(1, 13)" t-as="m">
+                                    <option t-att-value="'%02d' % m">
+                                        <t t-esc="'%02d' % m"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">&amp;</label>
+                            <select id="card_year" name="card_year" class="form-select" autocomplete="cc-exp-year">
+                                <option value="">YIL</option>
+                                <t t-set="current_year" t-value="datetime.date.today().year"/>
+                                <t t-foreach="range(0, 12)" t-as="i">
+                                    <option t-att-value="(current_year + i) % 100">
+                                        <t t-esc="current_year + i"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label for="card_cvv" class="form-label">Güvenlik Kodu</label>
+                            <input type="password"
+                                   id="card_cvv"
+                                   name="card_cvv"
+                                   maxlength="4"
+                                   inputmode="numeric"
+                                   class="form-control"
+                                   placeholder="CVC/CVV"
+                                   autocomplete="cc-csc"/>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <h6 class="mb-2">Taksit Seçenekleri</h6>
+                        <div id="mews_installment_container"
+                             class="border rounded p-2"
+                             t-att-data-amount="amount">
+                            <p class="text-muted mb-0">
+                                Kart numarasını girdikten sonra taksit seçenekleri yüklenecektir.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SAĞ: Kart preview -->
+                <div class="col-12 col-lg-6 mt-4 mt-lg-0">
+                    <div class="mews-card-preview shadow-sm rounded p-3 position-relative">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <span class="badge bg-light text-dark small">Kredi Kartı</span>
+                            <img class="bank-logo" alt="Banka" style="height: 24px; display: none;"/>
+                        </div>
+
+                        <div class="mt-4">
+                            <span class="chip d-inline-block mb-3"></span>
+                            <div class="h5 fw-semibold card_number_preview">
+                                ••••  ••••  ••••  ••••
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-end mt-4">
+                            <div>
+                                <div class="text-uppercase small text-muted">İsim Soyisim</div>
+                                <div class="fw-semibold fullname_preview">İsim Soyisim</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-uppercase small text-muted">AA / YY</div>
+                                <div class="fw-semibold">
+                                    <span class="date_month_preview">AA</span>
+                                    /
+                                    <span class="date_year_preview">YY</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 small text-muted">
+                            Bu kartın mülkiyeti ilgili bankaya aittir.  Bu kartın bulunması halinde
+                            en yakın banka şubesine teslim edilmesi rica olunur.
+                        </div>
+                    </div>
+                    <div class="mt-2 small text-muted text-end">
+                        <i class="fa fa-lock"></i>
+                        256 Bit SSL Güvenlikli Kredi Kartı
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!--
+        Payment method form'u extend et:
+        Yalnızca provider code = 'mews_pos' olanlar için inline form'u göster
+    -->
+    <template id="mews_pos_method_form" inherit_id="payment.method_form" name="Mews POS Method Form">
+        <xpath expr="//div[@name='o_payment_inline_form']" position="inside">
+            <t t-if="provider_sudo.code == 'mews_pos'">
+                <t t-call="mews_pos.mews_pos_inline_form">
+                    <t t-set="amount" t-value="amount"/>
+                    <t t-set="category_ids" t-value="''"/>
+                </t>
+            </t>
+        </xpath>
+    </template>
+</odoo>

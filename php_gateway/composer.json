@@ -1,0 +1,17 @@
+{
+    "name": "odoo/mews-pos-gateway",
+    "description": "Mews POS Gateway for Odoo Integration",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "mews/pos": "^1.0",
+        "php-http/curl-client": "^2.0",
+        "nyholm/psr7": "^1.0",
+        "symfony/event-dispatcher": "^5.0 || ^6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MewsPosGateway\\": "src/"
+        }
+    }
+}

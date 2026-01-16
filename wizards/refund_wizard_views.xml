@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mews_pos_refund_wizard_form" model="ir.ui.view">
+        <field name="name">mews.pos.refund.wizard.form</field>
+        <field name="model">mews.pos.refund.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="transaction_id"/>
+                    <field name="max_amount"/>
+                    <field name="is_full_refund"/>
+                    <field name="amount" invisible="is_full_refund"/>
+                    <field name="notes"/>
+                </group>
+                <footer>
+                    <button name="action_refund" string="İade Et" type="object" class="btn-primary"/>
+                    <button string="İptal" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

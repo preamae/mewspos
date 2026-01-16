@@ -1,0 +1,55 @@
+# -*- coding: utf-8 -*-
+
+from odoo import models, fields, api, _
+
+
+class MewsPosTransactionReport(models.Model):
+    """POS İşlem Raporu"""
+    _name = 'mews.pos.transaction.report'
+    _description = 'Mews POS İşlem Raporu'
+    _auto = False
+    _order = 'date desc'
+
+    date = fields.Date(string='Tarih', readonly=True)
+    bank_id = fields.Many2one('mews.pos.bank', string='Banka', readonly=True)
+    bank_name = fields.Char(string='Banka Adı', readonly=True)
+    
+    transaction_count = fields.Integer(string='İşlem Sayısı', readonly=True)
+    success_count = fields.Integer(string='Başarılı', readonly=True)
+    failed_count = fields.Integer(string='Başarısız', readonly=True)
+    cancelled_count = fields.Integer(string='İptal', readonly=True)
+    refunded_count = fields.Integer(string='İade', readonly=True)
+    
+    total_amount = fields.Float(string='Toplam Tutar', readonly=True, digits=(12, 2))
+    success_amount = fields.Float(string='Başarılı Tutar', readonly=True, digits=(12, 2))
+    refunded_amount = fields.Float(string='İade Tutar', readonly=True, digits=(12, 2))
+    net_amount = fields.Float(string='Net Tutar', readonly=True, digits=(12, 2))
+    
+    avg_installment = fields.Float(string='Ort.  Taksit', readonly=True, digits=(5, 2))
+    interest_amount = fields.Float(string='Faiz Tutarı', readonly=True, digits=(12, 2))
+
+    def init(self):
+        self.env.cr.execute("""
+            DROP VIEW IF EXISTS mews_pos_transaction_report;
+            CREATE OR REPLACE VIEW mews_pos_transaction_report AS (
+                SELECT
+                    row_number() OVER () AS id,
+                    DATE(t.create_date) AS date,
+                    t.bank_id,
+                    b.name AS bank_name,
+                    COUNT(t.id) AS transaction_count,
+                    SUM(CASE WHEN t.state = 'success' THEN 1 ELSE 0 END) AS success_count,
+                    SUM(CASE WHEN t.state = 'failed' THEN 1 ELSE 0 END) AS failed_count,
+                    SUM(CASE WHEN t.state = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_count,
+                    SUM(CASE WHEN t. state IN ('refunded', 'partial_refund') THEN 1 ELSE 0 END) AS refunded_count,
+                    SUM(t.total_amount) AS total_amount,
+                    SUM(CASE WHEN t.state = 'success' THEN t.total_amount ELSE 0 END) AS success_amount,
+                    SUM(t.refunded_amount) AS refunded_amount,
+                    SUM(CASE WHEN t.state = 'success' THEN t. total_amount ELSE 0 END) - SUM(t.refunded_amount) AS net_amount,
+                    AVG(t.installment_count) AS avg_installment,
+                    SUM(t.total_amount - t.amount) AS interest_amount
+                FROM mews_pos_transaction t
+                LEFT JOIN mews_pos_bank b ON t.bank_id = b.id
+                GROUP BY DATE(t.create_date), t.bank_id, b.name
+            )
+        """)

@@ -1,0 +1,14 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_mews_pos_bank,mews.pos.bank.user,model_mews_pos_bank,base.group_user,1,0,0,0
+access_mews_pos_bank_manager,mews.pos.bank.manager,model_mews_pos_bank,account.group_account_manager,1,1,1,1
+access_mews_pos_installment_config,mews.pos.installment.config.user,model_mews_pos_installment_config,base.group_user,1,0,0,0
+access_mews_pos_installment_config_manager,mews.pos.installment.config.manager,model_mews_pos_installment_config,account.group_account_manager,1,1,1,1
+access_mews_pos_category_restriction,mews.pos.category.restriction.user,model_mews_pos_category_restriction,base.group_user,1,0,0,0
+access_mews_pos_category_restriction_manager,mews.pos.category.restriction.manager,model_mews_pos_category_restriction,account.group_account_manager,1,1,1,1
+access_mews_pos_transaction,mews.pos.transaction.user,model_mews_pos_transaction,base.group_user,1,0,0,0
+access_mews_pos_transaction_manager,mews.pos.transaction.manager,model_mews_pos_transaction,account.group_account_manager,1,1,1,1
+access_mews_pos_refund,mews.pos.refund.user,model_mews_pos_refund,base.group_user,1,0,0,0
+access_mews_pos_refund_manager,mews.pos.refund.manager,model_mews_pos_refund,account.group_account_manager,1,1,1,1
+access_mews_pos_transaction_report,mews.pos.transaction.report.user,model_mews_pos_transaction_report,base.group_user,1,0,0,0
+access_mews_pos_installment_calculator_wizard,mews.pos.installment.calculator.wizard.user,model_mews_pos_installment_calculator_wizard,base.group_user,1,1,1,1
+access_mews_pos_refund_wizard,mews.pos.refund.wizard.user,model_mews_pos_refund_wizard,base.group_user,1,1,1,1

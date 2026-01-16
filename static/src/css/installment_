@@ -1,0 +1,119 @@
+/* Mews POS Taksit Stilleri */
+
+.mews-pos-payment-form {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.mews-installment-selector .bank-section {
+    transition: all 0.3s ease;
+}
+
+.mews-installment-selector .bank-section:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.installment-option {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.installment-option:hover {
+    background-color:  #f8f9fa ! important;
+}
+
+.installment-option.selected {
+    background-color: #e3f2fd !important;
+}
+
+.installment-option .form-check-input {
+    cursor: pointer;
+}
+
+/* Kart Input Stilleri */
+#card_number {
+    font-family: 'Courier New', monospace;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+}
+
+/* Accordion Özelleştirme */
+.accordion-button: not(.collapsed) {
+    background-color:  #e7f1ff;
+    color: #0c63e4;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(0, 0, 0, 0.125);
+}
+
+/* Kampanya Badge */
+.table-success {
+    --bs-table-bg: #d1e7dd;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .mews-pos-payment-form {
+        padding: 0 15px;
+    }
+    
+    .installment-option td {
+        padding:  0.5rem 0.25rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Loading Animasyonu */
+.mews-loading {
+    display:  flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+/* Güvenlik Kartı */
+.security-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: #f8f9fa;
+    border-radius: 50px;
+    font-size: 0.875rem;
+}
+
+.security-badge i {
+    color: #28a745;
+    margin-right: 0.5rem;
+}
+
+/* Banka Logoları */
+.bank-logo {
+    height: 30px;
+    width: auto;
+    object-fit: contain;
+}
+
+/* Ödeme Butonu */
+#pay_button {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+#pay_button: disabled {
+    opacity:  0.7;
+    cursor:  not-allowed;
+}
+
+/* 3D Secure Sayfası */
+.threed-redirect-card {
+    max-width: 500px;
+    margin: 50px auto;
+}
+
+.threed-redirect-card .spinner-border {
+    width: 4rem;
+    height:  4rem;
+}
