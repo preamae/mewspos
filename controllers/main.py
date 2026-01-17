@@ -146,13 +146,17 @@ class MewsPosController(http.Controller):
                     ('min_amount', '<=', amount),
                 ], order='installment_count')
 
-                # Tek çekim her zaman olmalı (installment_count=1)
-                has_single_payment = any(cfg.installment_count == 1 for cfg in installment_configs)
+                # Tek çekim yapılandırmasını kontrol et
+                single_payment_config = request.env['mews.pos.installment.config'].sudo().search([
+                    ('bank_id', '=', bank_rec.id),
+                    ('active', '=', True),
+                    ('installment_count', '=', 1),
+                ], limit=1)
                 
                 installments = []
                 
                 # Tek çekim ekle (yoksa)
-                if not has_single_payment:
+                if not single_payment_config:
                     installments.append({
                         'installment_count': 1,
                         'installment_amount': round(amount, 2),
@@ -160,11 +164,16 @@ class MewsPosController(http.Controller):
                         'interest_rate': 0.0,
                         'is_campaign': False,
                     })
-                
-                # Yapılandırılmış taksitleri ekle
-                for config in installment_configs:
-                    calc_result = config.calculate_installment(amount)
+                else:
+                    # Tek çekim yapılandırması varsa onu ekle
+                    calc_result = single_payment_config.calculate_installment(amount)
                     installments.append(calc_result)
+                
+                # Diğer taksitleri ekle (tek çekim hariç)
+                for config in installment_configs:
+                    if config.installment_count != 1:
+                        calc_result = config.calculate_installment(amount)
+                        installments.append(calc_result)
                 
                 # Eğer hiç taksit yoksa, en azından tek çekim ekle
                 if not installments:
