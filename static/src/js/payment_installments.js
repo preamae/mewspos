@@ -11,7 +11,6 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
         "input #card_name": "_onCardNameInput",
         "change #card_month, #card_year": "_onExpireChange",
         "change input[name='installment']": "_onInstallmentChange",
-        "click .o_payment_form_pay, .o_payment_submit_button": "_onPaymentSubmit",
     },
 
     start() {
@@ -86,8 +85,6 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
     _loadInstallments(bin) {
         if (!this.$installmentContainer.length) {
             console.warn("Mews POS: Installment container not found");
-            // Try to show error in a visible place
-            this._showError("Taksit konteyner bulunamadı. Lütfen sayfayı yenileyin.");
             return;
         }
         
@@ -186,71 +183,6 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
         const $checked = this.$("input[name='installment']:checked");
         if ($checked.length) {
             this._onInstallmentChange({ currentTarget: $checked[0] });
-        }
-    },
-    
-    _onPaymentSubmit(ev) {
-        // Validate bank configuration before allowing payment
-        const cardNumber = this.$("#card_number").val().replace(/\D/g, "");
-        
-        if (cardNumber.length < 6) {
-            this._showError("Lütfen geçerli bir kart numarası giriniz.");
-            ev.preventDefault();
-            return false;
-        }
-        
-        const bin = cardNumber.substring(0, 6);
-        
-        // Show loading indicator
-        const $button = $(ev.currentTarget);
-        const originalText = $button.html();
-        $button.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Kontrol ediliyor...');
-        
-        // Validate bank configuration
-        ajax.jsonRpc("/mews_pos/validate_bank_config", "call", {
-            bin_number: bin,
-        }).then((result) => {
-            if (!result.success) {
-                this._showError(`Banka Yapılandırma Hatası:\n\n${result.error}\n\nLütfen banka yapılandırmasını kontrol edin.`);
-                $button.prop("disabled", false).html(originalText);
-                ev.preventDefault();
-                return false;
-            }
-            
-            console.log("Bank configuration validated:", result);
-            // Allow form submission to continue
-            $button.prop("disabled", false).html(originalText);
-            
-            // If validation passed, the form will submit naturally
-        }).catch((err) => {
-            console.error("Bank validation error:", err);
-            this._showError("Banka yapılandırması kontrol edilirken hata oluştu. Lütfen tekrar deneyin.");
-            $button.prop("disabled", false).html(originalText);
-            ev.preventDefault();
-            return false;
-        });
-        
-        // Prevent default submission until validation completes
-        ev.preventDefault();
-        return false;
-    },
-    
-    _showError(message) {
-        // Try to use Odoo's notification system if available
-        if (typeof odoo !== 'undefined' && odoo.notification) {
-            odoo.notification.add(message, {
-                type: 'danger',
-                sticky: false,
-            });
-        } else if (this.$el.closest('.o_payment_form').length) {
-            // Add inline error message
-            const $errorDiv = $('<div class="alert alert-danger alert-dismissible mt-3">')
-                .html(`<button type="button" class="btn-close" data-bs-dismiss="alert"></button>${message.replace(/\n/g, '<br>')}`);
-            this.$el.prepend($errorDiv);
-            setTimeout(() => $errorDiv.fadeOut(), 10000);
-        } else {
-            // Fallback to alert
-            alert(message);
         }
     },
 });

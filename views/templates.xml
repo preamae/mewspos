@@ -12,6 +12,10 @@
         <div class="mews-pos-payment-form mt-3"
              t-att-data-amount="amount"
              t-att-data-category-ids="category_ids if category_ids else ''">
+            
+            <!-- Hidden inputs required by Odoo payment system -->
+            <input type="hidden" name="o_payment_submit_button_hidden" value="1"/>
+            
             <div class="row">
                 <!-- SOL:  Kart bilgileri -->
                 <div class="col-12 col-lg-6">
