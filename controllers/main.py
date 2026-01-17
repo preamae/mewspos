@@ -117,121 +117,70 @@ class MewsPosController(http.Controller):
 
             # b) bank_id yoksa bin_number ile tespit
             if not bank and bin_number and len(bin_number) >= 6:
-                # Örneğin bankalarda "bin_prefix" gibi bir alan olduğunu varsayıyoruz.
-                bank = (
-                    request.env['mews.pos.bank']
+                # BIN numarasından bankayı bul
+                bin_record = (
+                    request.env['mews.pos.bin']
                     .sudo()
-                    .search([('bin_prefix', '=', bin_number[:6])], limit=1)
+                    .search([('bin_number', '=', bin_number[:6]), ('active', '=', True)], limit=1)
                 )
+                if bin_record and bin_record.bank_id:
+                    bank = bin_record.bank_id
 
-            # c) Hâlâ banka yoksa: tüm bankalar üzerinden demo hesaplama
+            # c) Hâlâ banka yoksa: tüm aktif bankalardan taksit getir
             if not bank:
-                _logger.info("Mews POS - Bank not found, using demo banks")
-
-                banks = [
-                    {
-                        'id': 1,
-                        'name': 'Yapı Kredi Bankası',
-                        'code': 'yapikredi',
-                    },
-                    {
-                        'id': 2,
-                        'name': 'İş Bankası',
-                        'code': 'isbank',
-                    },
-                ]
+                _logger.info("Mews POS - Bank not detected from BIN, loading all active banks")
+                banks_to_process = request.env['mews.pos.bank'].sudo().search([('active', '=', True)])
             else:
-                banks = [{
-                    'id': bank.id,
-                    'name': bank.name,
-                    'code': bank.code or (bank.short_name if hasattr(bank, 'short_name') else ''),
-                }]
+                banks_to_process = bank
 
-            test_installments = []
+            result_installments = []
 
             # ============================
             # 2) Her banka için taksit hesaplama
             # ============================
-            for b in banks:
-                bank_id_val = b['id']
-                bank_name = b['name']
-                bank_code = b['code']
+            for bank_rec in banks_to_process:
+                # Bankaya ait aktif taksit yapılandırmalarını getir
+                installment_configs = request.env['mews.pos.installment.config'].sudo().search([
+                    ('bank_id', '=', bank_rec.id),
+                    ('active', '=', True),
+                    ('min_amount', '<=', amount),
+                ], order='installment_count')
 
-                # İstersen burada gerçek modelden (installment_config_ids) okuyabilirsin.
-                # Şimdilik senin verdiğin sabit senaryoları kullanıyoruz.
+                # Tek çekim her zaman olmalı (installment_count=1)
+                has_single_payment = any(cfg.installment_count == 1 for cfg in installment_configs)
+                
+                installments = []
+                
+                # Tek çekim ekle (yoksa)
+                if not has_single_payment:
+                    installments.append({
+                        'installment_count': 1,
+                        'installment_amount': round(amount, 2),
+                        'total_amount': round(amount, 2),
+                        'interest_rate': 0.0,
+                        'is_campaign': False,
+                    })
+                
+                # Yapılandırılmış taksitleri ekle
+                for config in installment_configs:
+                    calc_result = config.calculate_installment(amount)
+                    installments.append(calc_result)
+                
+                # Eğer hiç taksit yoksa, en azından tek çekim ekle
+                if not installments:
+                    installments.append({
+                        'installment_count': 1,
+                        'installment_amount': round(amount, 2),
+                        'total_amount': round(amount, 2),
+                        'interest_rate': 0.0,
+                        'is_campaign': False,
+                    })
 
-                if bank_id_val == 1:  # Yapı Kredi
-                    installments = [
-                        {
-                            'installment_count': 1,
-                            'installment_amount': round(amount, 2),
-                            'total_amount': round(amount, 2),
-                            'interest_rate': 0.0,
-                            'is_campaign': False,
-                        },
-                        {
-                            'installment_count': 2,
-                            'installment_amount': round(amount / 2, 2),
-                            'total_amount': round(amount, 2),
-                            'interest_rate': 0.0,
-                            'is_campaign': True,
-                        },
-                        {
-                            'installment_count': 3,
-                            'installment_amount': round(amount * 1.03 / 3, 2),
-                            'total_amount': round(amount * 1.03, 2),
-                            'interest_rate': 3.0,
-                            'is_campaign': True,
-                        },
-                        {
-                            'installment_count': 6,
-                            'installment_amount': round(amount * 1.06 / 6, 2),
-                            'total_amount': round(amount * 1.06, 2),
-                            'interest_rate': 6.0,
-                            'is_campaign': False,
-                        },
-                    ]
-                elif bank_id_val == 2:  # İş Bankası
-                    installments = [
-                        {
-                            'installment_count': 1,
-                            'installment_amount': round(amount, 2),
-                            'total_amount': round(amount, 2),
-                            'interest_rate': 0.0,
-                            'is_campaign': False,
-                        },
-                        {
-                            'installment_count': 2,
-                            'installment_amount': round(amount / 2, 2),
-                            'total_amount': round(amount, 2),
-                            'interest_rate': 0.0,
-                            'is_campaign': True,
-                        },
-                        {
-                            'installment_count': 4,
-                            'installment_amount': round(amount * 1.04 / 4, 2),
-                            'total_amount': round(amount * 1.04, 2),
-                            'interest_rate': 4.0,
-                            'is_campaign': False,
-                        },
-                    ]
-                else:
-                    # Diğer bankalar için sadece tek çekim örneği
-                    installments = [
-                        {
-                            'installment_count': 1,
-                            'installment_amount': round(amount, 2),
-                            'total_amount': round(amount, 2),
-                            'interest_rate': 0.0,
-                            'is_campaign': False,
-                        }
-                    ]
-
-                test_installments.append({
+                result_installments.append({
                     'bank': {
-                        'id': bank_id_val,
-                        'name': bank_name,
-                        'code': bank_code,
+                        'id': bank_rec.id,
+                        'name': bank_rec.name,
+                        'code': bank_rec.code or '',
                     },
                     'installments': installments,
                 })
@@ -241,7 +190,7 @@ class MewsPosController(http.Controller):
                 'id': None,
                 'result': {
                     'success': True,
-                    'installments': test_installments,
+                    'installments': result_installments,
                     'amount': amount,
                     'message': 'Taksit seçenekleri başarıyla yüklendi',
                 },
