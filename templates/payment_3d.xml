@@ -26,23 +26,31 @@
                                 </div>
                                 
                                 <!-- Auto-submit form -->
-                                <form t-att-id="'payment_form_3d'" 
-                                      t-att-action="form_data.get('redirect_url') or form_data.get('gateway_url')"
-                                      t-att-method="form_data.get('redirect_method', 'POST')"
-                                      style="display: none;">
-                                    <t t-foreach="form_data.get('form_fields', {}).items()" t-as="field">
-                                        <input type="hidden" 
-                                               t-att-name="field[0]" 
-                                               t-att-value="field[1]"/>
-                                    </t>
-                                </form>
-                                
-                                <script>
-                                    // Auto-submit the form after a brief delay
-                                    setTimeout(function() {
-                                        document.getElementById('payment_form_3d').submit();
-                                    }, 1000);
-                                </script>
+                                <t t-set="redirect_url" t-value="form_data.get('redirect_url') or form_data.get('gateway_url')"/>
+                                <t t-if="redirect_url and (redirect_url.startswith('https://') or redirect_url.startswith('http://'))">
+                                    <form t-att-id="'payment_form_3d'" 
+                                          t-att-action="redirect_url"
+                                          t-att-method="form_data.get('redirect_method', 'POST')"
+                                          style="display: none;">
+                                        <t t-foreach="form_data.get('form_fields', {}).items()" t-as="field">
+                                            <input type="hidden" 
+                                                   t-att-name="field[0]" 
+                                                   t-att-value="field[1]"/>
+                                        </t>
+                                    </form>
+                                    
+                                    <script>
+                                        // Auto-submit the form after a brief delay
+                                        setTimeout(function() {
+                                            document.getElementById('payment_form_3d').submit();
+                                        }, 1000);
+                                    </script>
+                                </t>
+                                <t t-else="">
+                                    <div class="alert alert-danger mt-3">
+                                        Geçersiz yönlendirme URL'si. Lütfen müşteri hizmetleri ile iletişime geçin.
+                                    </div>
+                                </t>
                             </div>
                         </div>
                     </div>

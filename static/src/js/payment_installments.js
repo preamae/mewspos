@@ -86,6 +86,8 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
     _loadInstallments(bin) {
         if (!this.$installmentContainer.length) {
             console.warn("Mews POS: Installment container not found");
+            // Try to show error in a visible place
+            this._showError("Taksit konteyner bulunamadı. Lütfen sayfayı yenileyin.");
             return;
         }
         
@@ -192,7 +194,7 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
         const cardNumber = this.$("#card_number").val().replace(/\D/g, "");
         
         if (cardNumber.length < 6) {
-            alert("Lütfen geçerli bir kart numarası giriniz.");
+            this._showError("Lütfen geçerli bir kart numarası giriniz.");
             ev.preventDefault();
             return false;
         }
@@ -209,7 +211,7 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
             bin_number: bin,
         }).then((result) => {
             if (!result.success) {
-                alert(`HATA: ${result.error}\n\nLütfen banka yapılandırmasını kontrol edin.`);
+                this._showError(`Banka Yapılandırma Hatası:\n\n${result.error}\n\nLütfen banka yapılandırmasını kontrol edin.`);
                 $button.prop("disabled", false).html(originalText);
                 ev.preventDefault();
                 return false;
@@ -222,7 +224,7 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
             // If validation passed, the form will submit naturally
         }).catch((err) => {
             console.error("Bank validation error:", err);
-            alert("Banka yapılandırması kontrol edilirken hata oluştu. Lütfen tekrar deneyin.");
+            this._showError("Banka yapılandırması kontrol edilirken hata oluştu. Lütfen tekrar deneyin.");
             $button.prop("disabled", false).html(originalText);
             ev.preventDefault();
             return false;
@@ -231,5 +233,24 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
         // Prevent default submission until validation completes
         ev.preventDefault();
         return false;
+    },
+    
+    _showError(message) {
+        // Try to use Odoo's notification system if available
+        if (typeof odoo !== 'undefined' && odoo.notification) {
+            odoo.notification.add(message, {
+                type: 'danger',
+                sticky: false,
+            });
+        } else if (this.$el.closest('.o_payment_form').length) {
+            // Add inline error message
+            const $errorDiv = $('<div class="alert alert-danger alert-dismissible mt-3">')
+                .html(`<button type="button" class="btn-close" data-bs-dismiss="alert"></button>${message.replace(/\n/g, '<br>')}`);
+            this.$el.prepend($errorDiv);
+            setTimeout(() => $errorDiv.fadeOut(), 10000);
+        } else {
+            // Fallback to alert
+            alert(message);
+        }
     },
 });

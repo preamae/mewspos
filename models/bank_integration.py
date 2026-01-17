@@ -292,7 +292,7 @@ class ToslaIntegration(BankIntegrationBase):
             )
             
             if response.status_code != 200:
-                raise UserError(_(f"Tosla API hatası: {response.status_code}"))
+                raise UserError(_("Tosla API hatası: %s") % response.status_code)
             
             result = response.json()
             
