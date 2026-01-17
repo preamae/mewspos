@@ -2,6 +2,7 @@
 
 from odoo import http
 from odoo.http import request, Response
+from odoo.exceptions import UserError
 import logging
 import json
 
@@ -274,3 +275,140 @@ class MewsPosController(http.Controller):
                 content_type='application/json; charset=utf-8',
                 status=500,
             )
+    
+    @http.route(
+        '/mews_pos/validate_bank_config',
+        type='json',
+        auth='public',
+        website=True,
+        csrf=False,
+    )
+    def validate_bank_config(self, bin_number=None, **kwargs):
+        """
+        Validate bank configuration before payment
+        Returns error if API credentials or gateway URLs are missing
+        """
+        try:
+            _logger.info("Mews POS - validate_bank_config BIN: %s", bin_number)
+            
+            # Find bank from BIN
+            bank = None
+            if bin_number and len(bin_number) >= 6:
+                bin_record = (
+                    request.env['mews.pos.bin']
+                    .sudo()
+                    .search([('bin_number', '=', bin_number[:6]), ('active', '=', True)], limit=1)
+                )
+                if bin_record and bin_record.bank_id:
+                    bank = bin_record.bank_id
+            
+            if not bank:
+                return {
+                    'success': False,
+                    'error': 'Kart numarasına ait banka bulunamadı. Lütfen kart numarasını kontrol edin.',
+                }
+            
+            # Check required fields based on gateway type
+            errors = []
+            
+            if not bank.merchant_id:
+                errors.append('Üye İşyeri No (Merchant ID)')
+            if not bank.terminal_id:
+                errors.append('Terminal No')
+            if not bank.username:
+                errors.append('Kullanıcı Adı')
+            if not bank.password:
+                errors.append('Şifre')
+            
+            # Check gateway URLs based on payment model
+            if bank.payment_model in ['3d_secure', '3d_pay']:
+                if not bank.gateway_3d_url:
+                    errors.append('3D Gateway URL')
+            elif bank.payment_model == '3d_host':
+                if not bank.gateway_3d_host_url:
+                    errors.append('3D Host Gateway URL')
+            
+            # For most gateways, store_key is required
+            if bank.gateway_type != 'tosla' and not bank.store_key:
+                errors.append('Store Key / 3D Secure Key')
+            
+            # Tosla specific validation
+            if bank.gateway_type == 'tosla':
+                if not bank.client_id:
+                    errors.append('Client ID')
+                if not bank.payment_api_url:
+                    errors.append('Payment API URL')
+            
+            if errors:
+                error_msg = f'{bank.name} bankası için eksik bilgiler:\n' + '\n'.join([f'- {e}' for e in errors])
+                return {
+                    'success': False,
+                    'error': error_msg,
+                    'bank_name': bank.name,
+                    'missing_fields': errors,
+                }
+            
+            return {
+                'success': True,
+                'bank_name': bank.name,
+                'bank_code': bank.code,
+                'gateway_type': bank.gateway_type,
+                'payment_model': bank.payment_model,
+            }
+            
+        except Exception as e:
+            _logger.error("Mews POS - validate_bank_config Error: %s", str(e), exc_info=True)
+            return {
+                'success': False,
+                'error': f'Banka yapılandırması kontrol edilirken hata oluştu: {str(e)}',
+            }
+    
+    @http.route(
+        '/mews_pos/payment_success',
+        type='http',
+        auth='public',
+        website=True,
+        csrf=False,
+        methods=['GET', 'POST'],
+    )
+    def payment_success(self, **kwargs):
+        """Handle successful payment callback from bank"""
+        try:
+            _logger.info("Mews POS - payment_success callback: %s", kwargs)
+            
+            # TODO: Verify payment with bank
+            # TODO: Update transaction status
+            # TODO: Confirm order
+            
+            return request.render('mews_pos.payment_success', {})
+            
+        except Exception as e:
+            _logger.error("Mews POS - payment_success Error: %s", str(e), exc_info=True)
+            return request.render('mews_pos.payment_error', {
+                'error_message': f'Ödeme doğrulama hatası: {str(e)}',
+            })
+    
+    @http.route(
+        '/mews_pos/payment_fail',
+        type='http',
+        auth='public',
+        website=True,
+        csrf=False,
+        methods=['GET', 'POST'],
+    )
+    def payment_fail(self, **kwargs):
+        """Handle failed payment callback from bank"""
+        try:
+            _logger.info("Mews POS - payment_fail callback: %s", kwargs)
+            
+            error_message = kwargs.get('errorMessage') or kwargs.get('ErrMsg') or 'Ödeme işlemi başarısız oldu.'
+            
+            return request.render('mews_pos.payment_error', {
+                'error_message': error_message,
+            })
+            
+        except Exception as e:
+            _logger.error("Mews POS - payment_fail Error: %s", str(e), exc_info=True)
+            return request.render('mews_pos.payment_error', {
+                'error_message': f'Bir hata oluştu: {str(e)}',
+            })

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- 3D Secure Redirect Form -->
+    <template id="payment_3d_form" name="3D Secure Payment Form">
+        <t t-call="website.layout">
+            <div class="container mt-5">
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h4 class="mb-0">
+                                    <i class="fa fa-lock"></i>
+                                    Güvenli Ödeme - <t t-esc="bank_name"/>
+                                </h4>
+                            </div>
+                            <div class="card-body text-center py-5">
+                                <div class="mb-4">
+                                    <i class="fa fa-shield fa-5x text-success"></i>
+                                </div>
+                                <h5>3D Secure Doğrulama</h5>
+                                <p class="text-muted">Banka güvenlik sayfasına yönlendiriliyorsunuz...</p>
+                                <p class="small text-muted">İşlem No: <t t-esc="transaction_id"/></p>
+                                
+                                <div class="spinner-border text-primary mt-3" role="status">
+                                    <span class="visually-hidden">Yükleniyor...</span>
+                                </div>
+                                
+                                <!-- Auto-submit form -->
+                                <form t-att-id="'payment_form_3d'" 
+                                      t-att-action="form_data.get('redirect_url') or form_data.get('gateway_url')"
+                                      t-att-method="form_data.get('redirect_method', 'POST')"
+                                      style="display: none;">
+                                    <t t-foreach="form_data.get('form_fields', {}).items()" t-as="field">
+                                        <input type="hidden" 
+                                               t-att-name="field[0]" 
+                                               t-att-value="field[1]"/>
+                                    </t>
+                                </form>
+                                
+                                <script>
+                                    // Auto-submit the form after a brief delay
+                                    setTimeout(function() {
+                                        document.getElementById('payment_form_3d').submit();
+                                    }, 1000);
+                                </script>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Payment Error Page -->
+    <template id="payment_error" name="Payment Error">
+        <t t-call="website.layout">
+            <div class="container mt-5">
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="card border-danger">
+                            <div class="card-header bg-danger text-white">
+                                <h4 class="mb-0">
+                                    <i class="fa fa-exclamation-triangle"></i>
+                                    Ödeme Hatası
+                                </h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-danger">
+                                    <h5>İşlem Başarısız</h5>
+                                    <p><t t-esc="error_message"/></p>
+                                </div>
+                                
+                                <div class="text-center mt-4">
+                                    <a href="/shop/cart" class="btn btn-primary">
+                                        <i class="fa fa-shopping-cart"></i>
+                                        Sepete Dön
+                                    </a>
+                                    <a href="/shop/payment" class="btn btn-secondary ms-2">
+                                        <i class="fa fa-redo"></i>
+                                        Tekrar Dene
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Payment Success Callback -->
+    <template id="payment_success" name="Payment Success">
+        <t t-call="website.layout">
+            <div class="container mt-5">
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h4 class="mb-0">
+                                    <i class="fa fa-check-circle"></i>
+                                    Ödeme Başarılı
+                                </h4>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="mb-4">
+                                    <i class="fa fa-check-circle fa-5x text-success"></i>
+                                </div>
+                                <h5>Ödemeniz Alındı</h5>
+                                <p class="text-muted">Siparişiniz işleme alınıyor.</p>
+                                
+                                <div class="mt-4">
+                                    <a href="/my/orders" class="btn btn-primary">
+                                        <i class="fa fa-list"></i>
+                                        Siparişlerim
+                                    </a>
+                                    <a href="/shop" class="btn btn-secondary ms-2">
+                                        <i class="fa fa-shopping-bag"></i>
+                                        Alışverişe Devam
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

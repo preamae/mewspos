@@ -11,6 +11,7 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
         "input #card_name": "_onCardNameInput",
         "change #card_month, #card_year": "_onExpireChange",
         "change input[name='installment']": "_onInstallmentChange",
+        "click .o_payment_form_pay, .o_payment_submit_button": "_onPaymentSubmit",
     },
 
     start() {
@@ -19,6 +20,19 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
         this.amount = parseFloat(this.$el.data("amount")) || 0;
         this.categoryIds = this.$el.data("category-ids") || "";
         this.currentBin = null;
+        
+        // Debug: Log amount to help troubleshoot
+        console.log("Mews POS Payment Form initialized", {
+            amount: this.amount,
+            hasContainer: this.$installmentContainer.length > 0
+        });
+        
+        // If amount is 0, try to get it from the installment container or context
+        if (this.amount === 0) {
+            this.amount = parseFloat(this.$installmentContainer.data("amount")) || 0;
+            console.log("Amount from container:", this.amount);
+        }
+        
         return Promise.resolve();
     },
 
@@ -70,26 +84,32 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
     },
 
     _loadInstallments(bin) {
-        if (!this.$installmentContainer.length || !this.amount) {
+        if (!this.$installmentContainer.length) {
+            console.warn("Mews POS: Installment container not found");
             return;
         }
+        
+        // If amount is still 0, try to get it from backend
+        const amount = this.amount || 0;
+        console.log("Loading installments for BIN:", bin, "Amount:", amount);
 
         this.$installmentContainer
             .addClass("opacity-50")
             .html('<span class="text-muted">Taksit seçenekleri yükleniyor...</span>');
 
         ajax.jsonRpc("/mews_pos/get_payment_installments", "call", {
-            amount: this.amount,
+            amount: amount,
             bin_number: bin,
         }).then((result) => {
             // Controller'da sen result'ı result: {...} altında döndürüyorsun
             const payload = result.result || result;
+            console.log("Installments loaded:", payload);
             this._renderInstallments(payload);
         }).catch((err) => {
             console.error("Mews POS installments error:", err);
             this.$installmentContainer
                 .removeClass("opacity-50")
-                .html('<span class="text-danger">Taksit seçenekleri alınırken hata oluştu.</span>');
+                .html('<span class="text-danger">Taksit seçenekleri alınırken hata oluştu. Lütfen sayfayı yenileyin.</span>');
         });
     },
 
@@ -125,16 +145,25 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
                     : "";
                 const monthly = inst.installment_amount || inst.amount_per || 0;
                 const total = inst.total_amount || (monthly * inst.installment_count);
+                const interest = inst.interest_amount || (total - inst.original_amount) || 0;
+                
+                // Show interest/difference if there is any
+                let interestInfo = "";
+                if (interest > 0) {
+                    interestInfo = `<div class="text-danger small">+${interest.toFixed(2)} ₺ faiz</div>`;
+                }
 
                 const $item = $(`
                     <label class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         <div>
                             <div class="fw-semibold">${label}${badge}</div>
-                            <div class="text-muted small">${monthly.toFixed ? monthly.toFixed(2) : monthly} ₺ x ${inst.installment_count} = ${total.toFixed ? total.toFixed(2) : total} ₺</div>
+                            <div class="text-muted small">${monthly.toFixed ? monthly.toFixed(2) : monthly} ₺ x ${inst.installment_count}</div>
+                            ${interestInfo}
                         </div>
-                        <div class="form-check">
+                        <div class="text-end">
+                            <div class="fw-bold">${total.toFixed ? total.toFixed(2) : total} ₺</div>
                             <input type="radio"
-                                   class="form-check-input"
+                                   class="form-check-input ms-2"
                                    id="${id}"
                                    name="installment"
                                    value="${inst.installment_count}"
@@ -156,5 +185,51 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
         if ($checked.length) {
             this._onInstallmentChange({ currentTarget: $checked[0] });
         }
+    },
+    
+    _onPaymentSubmit(ev) {
+        // Validate bank configuration before allowing payment
+        const cardNumber = this.$("#card_number").val().replace(/\D/g, "");
+        
+        if (cardNumber.length < 6) {
+            alert("Lütfen geçerli bir kart numarası giriniz.");
+            ev.preventDefault();
+            return false;
+        }
+        
+        const bin = cardNumber.substring(0, 6);
+        
+        // Show loading indicator
+        const $button = $(ev.currentTarget);
+        const originalText = $button.html();
+        $button.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Kontrol ediliyor...');
+        
+        // Validate bank configuration
+        ajax.jsonRpc("/mews_pos/validate_bank_config", "call", {
+            bin_number: bin,
+        }).then((result) => {
+            if (!result.success) {
+                alert(`HATA: ${result.error}\n\nLütfen banka yapılandırmasını kontrol edin.`);
+                $button.prop("disabled", false).html(originalText);
+                ev.preventDefault();
+                return false;
+            }
+            
+            console.log("Bank configuration validated:", result);
+            // Allow form submission to continue
+            $button.prop("disabled", false).html(originalText);
+            
+            // If validation passed, the form will submit naturally
+        }).catch((err) => {
+            console.error("Bank validation error:", err);
+            alert("Banka yapılandırması kontrol edilirken hata oluştu. Lütfen tekrar deneyin.");
+            $button.prop("disabled", false).html(originalText);
+            ev.preventDefault();
+            return false;
+        });
+        
+        // Prevent default submission until validation completes
+        ev.preventDefault();
+        return false;
     },
 });
