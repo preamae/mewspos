@@ -23,6 +23,7 @@
         'views/payment_provider_views.xml',
         'views/product_public_category_views.xml',
         'views/product_template_views.xml',
+        'views/bin_views.xml',
         'views/installment_views.xml',
         'views/installment_calculator_wizard_views.xml',
         'views/refund_wizard_views.xml',
