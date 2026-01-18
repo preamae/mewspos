@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
 import publicWidget from "@web/legacy/js/public/public_widget";
-import ajax from "web.ajax";
+import { jsonrpc } from "@web/core/network/rpc_service";
 
 publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
     selector: ".mews-pos-payment-form",
@@ -96,14 +96,12 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
             .addClass("opacity-50")
             .html('<span class="text-muted">Taksit seçenekleri yükleniyor...</span>');
 
-        ajax.jsonRpc("/mews_pos/get_payment_installments", "call", {
+        jsonrpc("/mews_pos/get_payment_installments", {
             amount: amount,
             bin_number: bin,
         }).then((result) => {
-            // Controller'da sen result'ı result: {...} altında döndürüyorsun
-            const payload = result.result || result;
-            console.log("Installments loaded:", payload);
-            this._renderInstallments(payload);
+            console.log("Installments loaded:", result);
+            this._renderInstallments(result);
         }).catch((err) => {
             console.error("Mews POS installments error:", err);
             this.$installmentContainer
@@ -112,8 +110,8 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
         });
     },
 
-    _renderInstallments(payload) {
-        const installmentsData = payload && payload.installments ? payload.installments : [];
+    _renderInstallments(response) {
+        const installmentsData = response && response.installments ? response.installments : [];
 
         if (!installmentsData.length) {
             this.$installmentContainer

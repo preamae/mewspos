@@ -13,11 +13,11 @@ class MewsPosController(http.Controller):
 
     @http.route(
         '/mews_pos/get_payment_installments',
-        type='http',
+        type='json',
         auth='public',
         website=True,
         csrf=False,
-        methods=['GET', 'POST'],
+        methods=['POST'],
     )
     def get_payment_installments(self, **kwargs):
         """
@@ -86,21 +86,12 @@ class MewsPosController(http.Controller):
 
             # Henüz sipariş / sepet yoksa
             if amount <= 0:
-                response_data = {
-                    'jsonrpc': '2.0',
-                    'id': None,
-                    'result': {
-                        'success': False,
-                        'installments': [],
-                        'amount': 0.0,
-                        'message': 'Tutar bulunamadı',
-                    },
+                return {
+                    'success': False,
+                    'installments': [],
+                    'amount': 0.0,
+                    'message': 'Tutar bulunamadı',
                 }
-                return Response(
-                    json.dumps(response_data, ensure_ascii=False),
-                    content_type='application/json; charset=utf-8',
-                    status=200,
-                )
 
             # ============================
             # 1) Banka tespiti
@@ -126,11 +117,30 @@ class MewsPosController(http.Controller):
                 )
                 if bin_record and bin_record.bank_id:
                     bank = bin_record.bank_id
+                    _logger.info("Bank found from BIN: %s -> %s", bin_number[:6], bank.name)
+                else:
+                    _logger.info("BIN not found in database: %s, will use default bank", bin_number[:6])
 
-            # c) Hâlâ banka yoksa: tüm aktif bankalardan taksit getir
+            # c) BIN tanımlı değilse veya banka bulunamadıysa: varsayılan bankayı kullan (tek çekim)
             if not bank:
-                _logger.info("Mews POS - Bank not detected from BIN, loading all active banks")
-                banks_to_process = request.env['mews.pos.bank'].sudo().search([('active', '=', True)])
+                _logger.info("No specific bank found, using default payment provider for single payment")
+                # Varsayılan ödeme sağlayıcısının ilk bankasını al
+                provider = request.env['payment.provider'].sudo().search([
+                    ('code', '=', 'mews_pos'),
+                    ('state', '=', 'enabled')
+                ], limit=1)
+                
+                if provider and provider.mews_bank_ids:
+                    # İlk aktif bankayı kullan
+                    bank = provider.mews_bank_ids[0] if provider.mews_bank_ids else None
+                    _logger.info("Using default bank: %s", bank.name if bank else "None")
+                
+                # Hâlâ banka yoksa: tüm aktif bankalardan tek çekim göster
+                if not bank:
+                    _logger.info("No default bank found, showing all active banks")
+                    banks_to_process = request.env['mews.pos.bank'].sudo().search([('active', '=', True)])
+                else:
+                    banks_to_process = bank
             else:
                 banks_to_process = bank
 
@@ -139,42 +149,58 @@ class MewsPosController(http.Controller):
             # ============================
             # 2) Her banka için taksit hesaplama
             # ============================
+            # BIN tanımlı değilse sadece tek çekim göster
+            bin_not_found = bin_number and len(bin_number) >= 6 and not any(
+                b.id == banks_to_process.id if hasattr(banks_to_process, 'id') else b.id in [bp.id for bp in banks_to_process]
+                for b in request.env['mews.pos.bin'].sudo().search([('bin_number', '=', bin_number[:6]), ('active', '=', True)])
+            )
+            
             for bank_rec in banks_to_process:
-                # Bankaya ait aktif taksit yapılandırmalarını getir
-                installment_configs = request.env['mews.pos.installment.config'].sudo().search([
-                    ('bank_id', '=', bank_rec.id),
-                    ('active', '=', True),
-                    ('min_amount', '<=', amount),
-                ], order='installment_count')
-
-                # Tek çekim yapılandırmasını kontrol et
-                single_payment_config = request.env['mews.pos.installment.config'].sudo().search([
-                    ('bank_id', '=', bank_rec.id),
-                    ('active', '=', True),
-                    ('installment_count', '=', 1),
-                ], limit=1)
-                
-                installments = []
-                
-                # Tek çekim ekle (yoksa)
-                if not single_payment_config:
-                    installments.append({
+                # BIN tanımlı değilse sadece tek çekim
+                if bin_not_found:
+                    installments = [{
                         'installment_count': 1,
                         'installment_amount': round(amount, 2),
                         'total_amount': round(amount, 2),
                         'interest_rate': 0.0,
                         'is_campaign': False,
-                    })
+                    }]
                 else:
-                    # Tek çekim yapılandırması varsa onu ekle
-                    calc_result = single_payment_config.calculate_installment(amount)
-                    installments.append(calc_result)
-                
-                # Diğer taksitleri ekle (tek çekim hariç)
-                for config in installment_configs:
-                    if config.installment_count != 1:
-                        calc_result = config.calculate_installment(amount)
+                    # Bankaya ait aktif taksit yapılandırmalarını getir
+                    installment_configs = request.env['mews.pos.installment.config'].sudo().search([
+                        ('bank_id', '=', bank_rec.id),
+                        ('active', '=', True),
+                        ('min_amount', '<=', amount),
+                    ], order='installment_count')
+
+                    # Tek çekim yapılandırmasını kontrol et
+                    single_payment_config = request.env['mews.pos.installment.config'].sudo().search([
+                        ('bank_id', '=', bank_rec.id),
+                        ('active', '=', True),
+                        ('installment_count', '=', 1),
+                    ], limit=1)
+                    
+                    installments = []
+                    
+                    # Tek çekim ekle (yoksa)
+                    if not single_payment_config:
+                        installments.append({
+                            'installment_count': 1,
+                            'installment_amount': round(amount, 2),
+                            'total_amount': round(amount, 2),
+                            'interest_rate': 0.0,
+                            'is_campaign': False,
+                        })
+                    else:
+                        # Tek çekim yapılandırması varsa onu ekle
+                        calc_result = single_payment_config.calculate_installment(amount)
                         installments.append(calc_result)
+                    
+                    # Diğer taksitleri ekle (tek çekim hariç)
+                    for config in installment_configs:
+                        if config.installment_count != 1:
+                            calc_result = config.calculate_installment(amount)
+                            installments.append(calc_result)
                 
                 # Eğer hiç taksit yoksa, en azından tek çekim ekle
                 if not installments:
@@ -195,30 +221,20 @@ class MewsPosController(http.Controller):
                     'installments': installments,
                 })
 
-            response_data = {
-                'jsonrpc': '2.0',
-                'id': None,
-                'result': {
-                    'success': True,
-                    'installments': result_installments,
-                    'amount': amount,
-                    'message': 'Taksit seçenekleri başarıyla yüklendi',
-                },
+            return {
+                'success': True,
+                'installments': result_installments,
+                'amount': amount,
+                'message': 'Taksit seçenekleri başarıyla yüklendi',
             }
-
-            return Response(
-                json.dumps(response_data, ensure_ascii=False),
-                content_type='application/json; charset=utf-8',
-                status=200,
-            )
 
         except Exception as e:
             _logger.error("Mews POS - get_payment_installments Error: %s", str(e), exc_info=True)
-            return Response(
-                json.dumps({'success': False, 'error': str(e)}, ensure_ascii=False),
-                content_type='application/json; charset=utf-8',
-                status=500,
-            )
+            return {
+                'success': False,
+                'error': str(e),
+                'installments': [],
+            }
 
     @http.route(
         '/mews_pos/test_installments',
