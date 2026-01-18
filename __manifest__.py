@@ -34,6 +34,7 @@
         # 4. TEMPLATES
         'views/templates.xml',
         'templates/payment_3d.xml',
+        'templates/product_installments.xml',
 
     ],
     'assets': {
