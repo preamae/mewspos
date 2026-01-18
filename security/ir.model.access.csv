@@ -1,6 +1,8 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_mews_pos_bank,mews.pos.bank.user,model_mews_pos_bank,base.group_user,1,0,0,0
 access_mews_pos_bank_manager,mews.pos.bank.manager,model_mews_pos_bank,account.group_account_manager,1,1,1,1
+access_mews_pos_bin,mews.pos.bin.user,model_mews_pos_bin,base.group_user,1,0,0,0
+access_mews_pos_bin_manager,mews.pos.bin.manager,model_mews_pos_bin,account.group_account_manager,1,1,1,1
 access_mews_pos_installment_config,mews.pos.installment.config.user,model_mews_pos_installment_config,base.group_user,1,0,0,0
 access_mews_pos_installment_config_manager,mews.pos.installment.config.manager,model_mews_pos_installment_config,account.group_account_manager,1,1,1,1
 access_mews_pos_category_restriction,mews.pos.category.restriction.user,model_mews_pos_category_restriction,base.group_user,1,0,0,0

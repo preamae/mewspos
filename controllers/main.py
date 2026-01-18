@@ -2,6 +2,7 @@
 
 from odoo import http
 from odoo.http import request, Response
+from odoo.exceptions import UserError
 import logging
 import json
 
@@ -12,11 +13,11 @@ class MewsPosController(http.Controller):
 
     @http.route(
         '/mews_pos/get_payment_installments',
-        type='http',
+        type='json',
         auth='public',
         website=True,
         csrf=False,
-        methods=['GET', 'POST'],
+        methods=['POST'],
     )
     def get_payment_installments(self, **kwargs):
         """
@@ -85,21 +86,12 @@ class MewsPosController(http.Controller):
 
             # Henüz sipariş / sepet yoksa
             if amount <= 0:
-                response_data = {
-                    'jsonrpc': '2.0',
-                    'id': None,
-                    'result': {
-                        'success': False,
-                        'installments': [],
-                        'amount': 0.0,
-                        'message': 'Tutar bulunamadı',
-                    },
+                return {
+                    'success': False,
+                    'installments': [],
+                    'amount': 0.0,
+                    'message': 'Tutar bulunamadı',
                 }
-                return Response(
-                    json.dumps(response_data, ensure_ascii=False),
-                    content_type='application/json; charset=utf-8',
-                    status=200,
-                )
 
             # ============================
             # 1) Banka tespiti
@@ -117,149 +109,132 @@ class MewsPosController(http.Controller):
 
             # b) bank_id yoksa bin_number ile tespit
             if not bank and bin_number and len(bin_number) >= 6:
-                # Örneğin bankalarda "bin_prefix" gibi bir alan olduğunu varsayıyoruz.
-                bank = (
-                    request.env['mews.pos.bank']
+                # BIN numarasından bankayı bul
+                bin_record = (
+                    request.env['mews.pos.bin']
                     .sudo()
-                    .search([('bin_prefix', '=', bin_number[:6])], limit=1)
+                    .search([('bin_number', '=', bin_number[:6]), ('active', '=', True)], limit=1)
                 )
+                if bin_record and bin_record.bank_id:
+                    bank = bin_record.bank_id
+                    _logger.info("Bank found from BIN: %s -> %s", bin_number[:6], bank.name)
+                else:
+                    _logger.info("BIN not found in database: %s, will use default bank", bin_number[:6])
 
-            # c) Hâlâ banka yoksa: tüm bankalar üzerinden demo hesaplama
+            # c) BIN tanımlı değilse veya banka bulunamadıysa: varsayılan bankayı kullan (tek çekim)
             if not bank:
-                _logger.info("Mews POS - Bank not found, using demo banks")
-
-                banks = [
-                    {
-                        'id': 1,
-                        'name': 'Yapı Kredi Bankası',
-                        'code': 'yapikredi',
-                    },
-                    {
-                        'id': 2,
-                        'name': 'İş Bankası',
-                        'code': 'isbank',
-                    },
-                ]
+                _logger.info("No specific bank found, using default payment provider for single payment")
+                # Varsayılan ödeme sağlayıcısının ilk bankasını al
+                provider = request.env['payment.provider'].sudo().search([
+                    ('code', '=', 'mews_pos'),
+                    ('state', '=', 'enabled')
+                ], limit=1)
+                
+                if provider and provider.mews_bank_ids:
+                    # İlk aktif bankayı kullan
+                    bank = provider.mews_bank_ids[0] if provider.mews_bank_ids else None
+                    _logger.info("Using default bank: %s", bank.name if bank else "None")
+                
+                # Hâlâ banka yoksa: tüm aktif bankalardan tek çekim göster
+                if not bank:
+                    _logger.info("No default bank found, showing all active banks")
+                    banks_to_process = request.env['mews.pos.bank'].sudo().search([('active', '=', True)])
+                else:
+                    banks_to_process = bank
             else:
-                banks = [{
-                    'id': bank.id,
-                    'name': bank.name,
-                    'code': bank.code or (bank.short_name if hasattr(bank, 'short_name') else ''),
-                }]
+                banks_to_process = bank
 
-            test_installments = []
+            result_installments = []
 
             # ============================
             # 2) Her banka için taksit hesaplama
             # ============================
-            for b in banks:
-                bank_id_val = b['id']
-                bank_name = b['name']
-                bank_code = b['code']
-
-                # İstersen burada gerçek modelden (installment_config_ids) okuyabilirsin.
-                # Şimdilik senin verdiğin sabit senaryoları kullanıyoruz.
-
-                if bank_id_val == 1:  # Yapı Kredi
-                    installments = [
-                        {
-                            'installment_count': 1,
-                            'installment_amount': round(amount, 2),
-                            'total_amount': round(amount, 2),
-                            'interest_rate': 0.0,
-                            'is_campaign': False,
-                        },
-                        {
-                            'installment_count': 2,
-                            'installment_amount': round(amount / 2, 2),
-                            'total_amount': round(amount, 2),
-                            'interest_rate': 0.0,
-                            'is_campaign': True,
-                        },
-                        {
-                            'installment_count': 3,
-                            'installment_amount': round(amount * 1.03 / 3, 2),
-                            'total_amount': round(amount * 1.03, 2),
-                            'interest_rate': 3.0,
-                            'is_campaign': True,
-                        },
-                        {
-                            'installment_count': 6,
-                            'installment_amount': round(amount * 1.06 / 6, 2),
-                            'total_amount': round(amount * 1.06, 2),
-                            'interest_rate': 6.0,
-                            'is_campaign': False,
-                        },
-                    ]
-                elif bank_id_val == 2:  # İş Bankası
-                    installments = [
-                        {
-                            'installment_count': 1,
-                            'installment_amount': round(amount, 2),
-                            'total_amount': round(amount, 2),
-                            'interest_rate': 0.0,
-                            'is_campaign': False,
-                        },
-                        {
-                            'installment_count': 2,
-                            'installment_amount': round(amount / 2, 2),
-                            'total_amount': round(amount, 2),
-                            'interest_rate': 0.0,
-                            'is_campaign': True,
-                        },
-                        {
-                            'installment_count': 4,
-                            'installment_amount': round(amount * 1.04 / 4, 2),
-                            'total_amount': round(amount * 1.04, 2),
-                            'interest_rate': 4.0,
-                            'is_campaign': False,
-                        },
-                    ]
+            # BIN tanımlı değilse sadece tek çekim göster
+            bin_not_found = bin_number and len(bin_number) >= 6 and not any(
+                b.id == banks_to_process.id if hasattr(banks_to_process, 'id') else b.id in [bp.id for bp in banks_to_process]
+                for b in request.env['mews.pos.bin'].sudo().search([('bin_number', '=', bin_number[:6]), ('active', '=', True)])
+            )
+            
+            for bank_rec in banks_to_process:
+                # BIN tanımlı değilse sadece tek çekim
+                if bin_not_found:
+                    installments = [{
+                        'installment_count': 1,
+                        'installment_amount': round(amount, 2),
+                        'total_amount': round(amount, 2),
+                        'interest_rate': 0.0,
+                        'is_campaign': False,
+                    }]
                 else:
-                    # Diğer bankalar için sadece tek çekim örneği
-                    installments = [
-                        {
+                    # Bankaya ait aktif taksit yapılandırmalarını getir
+                    installment_configs = request.env['mews.pos.installment.config'].sudo().search([
+                        ('bank_id', '=', bank_rec.id),
+                        ('active', '=', True),
+                        ('min_amount', '<=', amount),
+                    ], order='installment_count')
+
+                    # Tek çekim yapılandırmasını kontrol et
+                    single_payment_config = request.env['mews.pos.installment.config'].sudo().search([
+                        ('bank_id', '=', bank_rec.id),
+                        ('active', '=', True),
+                        ('installment_count', '=', 1),
+                    ], limit=1)
+                    
+                    installments = []
+                    
+                    # Tek çekim ekle (yoksa)
+                    if not single_payment_config:
+                        installments.append({
                             'installment_count': 1,
                             'installment_amount': round(amount, 2),
                             'total_amount': round(amount, 2),
                             'interest_rate': 0.0,
                             'is_campaign': False,
-                        }
-                    ]
+                        })
+                    else:
+                        # Tek çekim yapılandırması varsa onu ekle
+                        calc_result = single_payment_config.calculate_installment(amount)
+                        installments.append(calc_result)
+                    
+                    # Diğer taksitleri ekle (tek çekim hariç)
+                    for config in installment_configs:
+                        if config.installment_count != 1:
+                            calc_result = config.calculate_installment(amount)
+                            installments.append(calc_result)
+                
+                # Eğer hiç taksit yoksa, en azından tek çekim ekle
+                if not installments:
+                    installments.append({
+                        'installment_count': 1,
+                        'installment_amount': round(amount, 2),
+                        'total_amount': round(amount, 2),
+                        'interest_rate': 0.0,
+                        'is_campaign': False,
+                    })
 
-                test_installments.append({
+                result_installments.append({
                     'bank': {
-                        'id': bank_id_val,
-                        'name': bank_name,
-                        'code': bank_code,
+                        'id': bank_rec.id,
+                        'name': bank_rec.name,
+                        'code': bank_rec.code or '',
                     },
                     'installments': installments,
                 })
 
-            response_data = {
-                'jsonrpc': '2.0',
-                'id': None,
-                'result': {
-                    'success': True,
-                    'installments': test_installments,
-                    'amount': amount,
-                    'message': 'Taksit seçenekleri başarıyla yüklendi',
-                },
+            return {
+                'success': True,
+                'installments': result_installments,
+                'amount': amount,
+                'message': 'Taksit seçenekleri başarıyla yüklendi',
             }
-
-            return Response(
-                json.dumps(response_data, ensure_ascii=False),
-                content_type='application/json; charset=utf-8',
-                status=200,
-            )
 
         except Exception as e:
             _logger.error("Mews POS - get_payment_installments Error: %s", str(e), exc_info=True)
-            return Response(
-                json.dumps({'success': False, 'error': str(e)}, ensure_ascii=False),
-                content_type='application/json; charset=utf-8',
-                status=500,
-            )
+            return {
+                'success': False,
+                'error': str(e),
+                'installments': [],
+            }
 
     @http.route(
         '/mews_pos/test_installments',
@@ -316,3 +291,140 @@ class MewsPosController(http.Controller):
                 content_type='application/json; charset=utf-8',
                 status=500,
             )
+    
+    @http.route(
+        '/mews_pos/validate_bank_config',
+        type='json',
+        auth='public',
+        website=True,
+        csrf=False,
+    )
+    def validate_bank_config(self, bin_number=None, **kwargs):
+        """
+        Validate bank configuration before payment
+        Returns error if API credentials or gateway URLs are missing
+        """
+        try:
+            _logger.info("Mews POS - validate_bank_config BIN: %s", bin_number)
+            
+            # Find bank from BIN
+            bank = None
+            if bin_number and len(bin_number) >= 6:
+                bin_record = (
+                    request.env['mews.pos.bin']
+                    .sudo()
+                    .search([('bin_number', '=', bin_number[:6]), ('active', '=', True)], limit=1)
+                )
+                if bin_record and bin_record.bank_id:
+                    bank = bin_record.bank_id
+            
+            if not bank:
+                return {
+                    'success': False,
+                    'error': 'Kart numarasına ait banka bulunamadı. Lütfen kart numarasını kontrol edin.',
+                }
+            
+            # Check required fields based on gateway type
+            errors = []
+            
+            if not bank.merchant_id:
+                errors.append('Üye İşyeri No (Merchant ID)')
+            if not bank.terminal_id:
+                errors.append('Terminal No')
+            if not bank.username:
+                errors.append('Kullanıcı Adı')
+            if not bank.password:
+                errors.append('Şifre')
+            
+            # Check gateway URLs based on payment model
+            if bank.payment_model in ['3d_secure', '3d_pay']:
+                if not bank.gateway_3d_url:
+                    errors.append('3D Gateway URL')
+            elif bank.payment_model == '3d_host':
+                if not bank.gateway_3d_host_url:
+                    errors.append('3D Host Gateway URL')
+            
+            # For most gateways, store_key is required
+            if bank.gateway_type != 'tosla' and not bank.store_key:
+                errors.append('Store Key / 3D Secure Key')
+            
+            # Tosla specific validation
+            if bank.gateway_type == 'tosla':
+                if not bank.client_id:
+                    errors.append('Client ID')
+                if not bank.payment_api_url:
+                    errors.append('Payment API URL')
+            
+            if errors:
+                error_msg = f'{bank.name} bankası için eksik bilgiler:\n' + '\n'.join([f'- {e}' for e in errors])
+                return {
+                    'success': False,
+                    'error': error_msg,
+                    'bank_name': bank.name,
+                    'missing_fields': errors,
+                }
+            
+            return {
+                'success': True,
+                'bank_name': bank.name,
+                'bank_code': bank.code,
+                'gateway_type': bank.gateway_type,
+                'payment_model': bank.payment_model,
+            }
+            
+        except Exception as e:
+            _logger.error("Mews POS - validate_bank_config Error: %s", str(e), exc_info=True)
+            return {
+                'success': False,
+                'error': f'Banka yapılandırması kontrol edilirken hata oluştu: {str(e)}',
+            }
+    
+    @http.route(
+        '/mews_pos/payment_success',
+        type='http',
+        auth='public',
+        website=True,
+        csrf=False,
+        methods=['GET', 'POST'],
+    )
+    def payment_success(self, **kwargs):
+        """Handle successful payment callback from bank"""
+        try:
+            _logger.info("Mews POS - payment_success callback: %s", kwargs)
+            
+            # TODO: Verify payment with bank
+            # TODO: Update transaction status
+            # TODO: Confirm order
+            
+            return request.render('mews_pos.payment_success', {})
+            
+        except Exception as e:
+            _logger.error("Mews POS - payment_success Error: %s", str(e), exc_info=True)
+            return request.render('mews_pos.payment_error', {
+                'error_message': f'Ödeme doğrulama hatası: {str(e)}',
+            })
+    
+    @http.route(
+        '/mews_pos/payment_fail',
+        type='http',
+        auth='public',
+        website=True,
+        csrf=False,
+        methods=['GET', 'POST'],
+    )
+    def payment_fail(self, **kwargs):
+        """Handle failed payment callback from bank"""
+        try:
+            _logger.info("Mews POS - payment_fail callback: %s", kwargs)
+            
+            error_message = kwargs.get('errorMessage') or kwargs.get('ErrMsg') or 'Ödeme işlemi başarısız oldu.'
+            
+            return request.render('mews_pos.payment_error', {
+                'error_message': error_message,
+            })
+            
+        except Exception as e:
+            _logger.error("Mews POS - payment_fail Error: %s", str(e), exc_info=True)
+            return request.render('mews_pos.payment_error', {
+                'error_message': f'Bir hata oluştu: {str(e)}',
+            })

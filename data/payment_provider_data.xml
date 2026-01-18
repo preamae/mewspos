@@ -109,7 +109,132 @@
             <field name="active" eval="True"/>
         </record>
 
-        <!-- ✅ 4. PAYMENT PROVIDER - OTOMATİK OLUŞTUR -->
+        <!-- 3. TAKSİTLER - YAPIKREDI -->
+        <record id="mews_pos_installment_yapikredi_2" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_yapikredi"/>
+            <field name="installment_count">2</field>
+            <field name="interest_rate">0.0</field>
+            <field name="commission_rate">2.40</field>
+            <field name="min_amount">100.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_installment_yapikredi_3" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_yapikredi"/>
+            <field name="installment_count">3</field>
+            <field name="interest_rate">1.20</field>
+            <field name="commission_rate">2.80</field>
+            <field name="min_amount">150.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_installment_yapikredi_6" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_yapikredi"/>
+            <field name="installment_count">6</field>
+            <field name="interest_rate">1.60</field>
+            <field name="commission_rate">3.40</field>
+            <field name="min_amount">300.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- 3. TAKSİTLER - İŞBANK -->
+        <record id="mews_pos_installment_isbank_2" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_isbank"/>
+            <field name="installment_count">2</field>
+            <field name="interest_rate">0.0</field>
+            <field name="commission_rate">2.50</field>
+            <field name="min_amount">100.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_installment_isbank_4" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_isbank"/>
+            <field name="installment_count">4</field>
+            <field name="interest_rate">1.30</field>
+            <field name="commission_rate">3.00</field>
+            <field name="min_amount">200.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_installment_isbank_9" model="mews.pos.installment.config">
+            <field name="bank_id" ref="mews_pos_bank_isbank"/>
+            <field name="installment_count">9</field>
+            <field name="interest_rate">2.10</field>
+            <field name="commission_rate">4.00</field>
+            <field name="min_amount">500.0</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- 4. BIN NUMARALARI (Kart tanıma için) -->
+        <!-- Akbank BIN'leri -->
+        <record id="mews_pos_bin_akbank_1" model="mews.pos.bin">
+            <field name="name">Akbank Axess</field>
+            <field name="bin_number">546001</field>
+            <field name="bank_id" ref="mews_pos_bank_akbank"/>
+            <field name="card_type">mastercard</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_bin_akbank_2" model="mews.pos.bin">
+            <field name="name">Akbank Kredi Kartı</field>
+            <field name="bin_number">540667</field>
+            <field name="bank_id" ref="mews_pos_bank_akbank"/>
+            <field name="card_type">mastercard</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- Garanti BBVA BIN'leri -->
+        <record id="mews_pos_bin_garanti_1" model="mews.pos.bin">
+            <field name="name">Garanti Bonus</field>
+            <field name="bin_number">552608</field>
+            <field name="bank_id" ref="mews_pos_bank_garanti"/>
+            <field name="card_type">mastercard</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_bin_garanti_2" model="mews.pos.bin">
+            <field name="name">Garanti Bonus Visa</field>
+            <field name="bin_number">415514</field>
+            <field name="bank_id" ref="mews_pos_bank_garanti"/>
+            <field name="card_type">visa</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- YapıKredi BIN'leri -->
+        <record id="mews_pos_bin_yapikredi_1" model="mews.pos.bin">
+            <field name="name">YapıKredi World</field>
+            <field name="bin_number">450634</field>
+            <field name="bank_id" ref="mews_pos_bank_yapikredi"/>
+            <field name="card_type">visa</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_bin_yapikredi_2" model="mews.pos.bin">
+            <field name="name">YapıKredi Platinum</field>
+            <field name="bin_number">557366</field>
+            <field name="bank_id" ref="mews_pos_bank_yapikredi"/>
+            <field name="card_type">mastercard</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- İşbank BIN'leri -->
+        <record id="mews_pos_bin_isbank_1" model="mews.pos.bin">
+            <field name="name">İşbank Maximum</field>
+            <field name="bin_number">454671</field>
+            <field name="bank_id" ref="mews_pos_bank_isbank"/>
+            <field name="card_type">visa</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="mews_pos_bin_isbank_2" model="mews.pos.bin">
+            <field name="name">İşbank Bankkart</field>
+            <field name="bin_number">491182</field>
+            <field name="bank_id" ref="mews_pos_bank_isbank"/>
+            <field name="card_type">visa</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- ✅ 5. PAYMENT PROVIDER - OTOMATİK OLUŞTUR -->
         <record id="payment_provider_mews_pos" model="payment.provider">
             <field name="name">Kredi Kartı (Taksitli)</field>
             <field name="code">mews_pos</field>

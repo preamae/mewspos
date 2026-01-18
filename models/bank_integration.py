@@ -238,6 +238,128 @@ class YapiKrediIntegration(BankIntegrationBase):
             _logger.error(f"Yapı Kredi SOAP error: {str(e)}")
             raise UserError(_("Yapı Kredi bağlantı hatası"))
 
+class ToslaIntegration(BankIntegrationBase):
+    """Tosla Payment Gateway Integration"""
+    
+    def create_payment_form(self, order_data):
+        """Create payment form for Tosla gateway"""
+        try:
+            # Tosla uses REST API with JSON
+            api_url = self.config.get('payment_api_url') or self.config.get('endpoints', {}).get('payment_api')
+            
+            if not api_url:
+                raise UserError(_("Tosla Payment API URL yapılandırılmamış"))
+            
+            # Prepare request data
+            request_data = {
+                'clientId': self.config.get('client_id'),
+                'merchantId': self.config.get('merchant_id'),
+                'terminalId': self.config.get('terminal_id'),
+                'orderId': order_data.get('order_id'),
+                'amount': str(order_data.get('amount')),
+                'currency': 'TRY',
+                'installment': str(order_data.get('installment', 1)),
+                'cardNumber': order_data.get('card_number'),
+                'cardHolderName': order_data.get('card_holder'),
+                'cardExpMonth': order_data.get('card_exp_month'),
+                'cardExpYear': order_data.get('card_exp_year'),
+                'cardCvv': order_data.get('card_cvv'),
+                'callbackUrl': order_data.get('success_url'),
+                'failUrl': order_data.get('fail_url'),
+            }
+            
+            # Generate hash/signature if required
+            if self.config.get('store_key'):
+                hash_string = (
+                    f"{request_data['clientId']}"
+                    f"{request_data['orderId']}"
+                    f"{request_data['amount']}"
+                    f"{self.config.get('store_key')}"
+                )
+                request_data['hash'] = self._generate_sha256(hash_string)
+            
+            headers = {
+                'Content-Type': 'application/json',
+                'User-Agent': 'Odoo/19.0'
+            }
+            
+            # Make API request
+            response = requests.post(
+                api_url,
+                json=request_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code != 200:
+                raise UserError(_("Tosla API hatası: %s") % response.status_code)
+            
+            result = response.json()
+            
+            # Tosla returns 3D Secure redirect URL
+            if result.get('redirectUrl'):
+                form_data = {
+                    'redirect_url': result.get('redirectUrl'),
+                    'redirect_method': 'GET',
+                    'transaction_id': result.get('transactionId'),
+                    'form_fields': {},
+                }
+            else:
+                # If direct response (non-3D)
+                form_data = {
+                    'approved': result.get('success', False),
+                    'auth_code': result.get('authCode', ''),
+                    'transaction_id': result.get('transactionId', ''),
+                    'error_message': result.get('errorMessage', ''),
+                }
+            
+            return form_data
+            
+        except requests.exceptions.RequestException as e:
+            _logger.error(f"Tosla connection error: {str(e)}")
+            raise UserError(_("Tosla bağlantı hatası: %s") % str(e))
+        except Exception as e:
+            _logger.error(f"Tosla error: {str(e)}")
+            raise UserError(_("Tosla işlem hatası: %s") % str(e))
+
+def get_bank_integration(bank):
+    """
+    Factory function to get appropriate bank integration instance
+    
+    Args:
+        bank: mews.pos.bank record
+        
+    Returns:
+        BankIntegrationBase instance or None
+    """
+    gateway_type = bank.gateway_type
+    
+    integration_map = {
+        'akbank_pos': AkbankIntegration,
+        'estv3_pos': AkbankIntegration,  # EST V3 is similar to Akbank
+        'garanti_pos': GarantiIntegration,
+        'posnet': YapiKrediIntegration,
+        'posnet_v1': YapiKrediIntegration,
+        'tosla': ToslaIntegration,
+    }
+    
+    integration_class = integration_map.get(gateway_type)
+    
+    if integration_class:
+        # Create a pseudo acquirer object for compatibility
+        class BankAcquirerAdapter:
+            def __init__(self, bank_record):
+                self.bank = bank_record
+                
+            def get_bank_config(self):
+                return self.bank.get_account_config()
+        
+        adapter = BankAcquirerAdapter(bank)
+        return integration_class(adapter)
+    
+    _logger.warning(f"No integration found for gateway type: {gateway_type}")
+    return None
+
 class PaymentAcquirer(models.Model):
     """Ödeme Sağlayıcısı Genişletmesi"""
     _inherit = 'payment.provider'
