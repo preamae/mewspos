@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BIN List View -->
+    <record id="mews_pos_bin_list" model="ir.ui.view">
+        <field name="name">mews.pos.bin.list</field>
+        <field name="model">mews.pos.bin</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="bin_number"/>
+                <field name="name"/>
+                <field name="bank_id"/>
+                <field name="card_type"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- BIN Form View -->
+    <record id="mews_pos_bin_form" model="ir.ui.view">
+        <field name="name">mews.pos.bin.form</field>
+        <field name="model">mews.pos.bin</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="Genel Bilgiler">
+                            <field name="name"/>
+                            <field name="bin_number"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Banka ve Kart Bilgileri">
+                            <field name="bank_id"/>
+                            <field name="card_type"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- BIN Action -->
+    <record id="mews_pos_bin_action" model="ir.actions.act_window">
+        <field name="name">BIN Numaraları</field>
+        <field name="res_model">mews.pos.bin</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                BIN (Bank Identification Number) numarası ekle
+            </p>
+            <p>
+                BIN numaraları, kredi kartının ilk 6 hanesidir ve kartın hangi bankaya ait olduğunu belirler.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menü -->
+    <menuitem id="mews_pos_menu_bins"
+              name="BIN Numaraları"
+              parent="mews_pos_menu_config"
+              action="mews_pos_bin_action"
+              sequence="15"/>
+</odoo>
