@@ -2,6 +2,7 @@
 
 # ✅ 1. ÖNCE PAYMENT PROVIDER (selection_add için)
 from . import payment_provider
+from . import payment_transaction
 
 # ✅ 2. SONRA DİĞER MODELLER
 from . import mews_pos_bank

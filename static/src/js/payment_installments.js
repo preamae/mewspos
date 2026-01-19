@@ -57,6 +57,11 @@ publicWidget.registry.MewsPosPaymentForm = publicWidget.Widget.extend({
             const bin = value.substring(0, 6);
             if (bin !== this.currentBin) {
                 this.currentBin = bin;
+                // Store BIN in hidden field
+                const binInput = this.el?.querySelector("#mews_bin_number");
+                if (binInput) {
+                    binInput.value = bin;
+                }
                 this._loadInstallments(bin);
             }
         } else {

@@ -380,6 +380,32 @@ class MewsPosController(http.Controller):
             }
     
     @http.route(
+        '/payment/mews_pos/return',
+        type='http',
+        auth='public',
+        website=True,
+        csrf=False,
+        methods=['GET', 'POST'],
+    )
+    def mews_pos_return(self, **kwargs):
+        """Handle return from bank 3D Secure page"""
+        try:
+            _logger.info("Mews POS - Return from bank: %s", kwargs)
+            
+            # Process the notification data
+            tx_sudo = request.env['payment.transaction'].sudo()._get_tx_from_notification_data('mews_pos', kwargs)
+            tx_sudo._process_notification_data(kwargs)
+            
+            # Redirect to payment status page
+            return request.redirect('/payment/status')
+            
+        except Exception as e:
+            _logger.error("Mews POS - Return handler Error: %s", str(e), exc_info=True)
+            return request.render('mews_pos.payment_error', {
+                'error_message': f'Ödeme işlemi sırasında hata oluştu: {str(e)}',
+            })
+    
+    @http.route(
         '/mews_pos/payment_success',
         type='http',
         auth='public',

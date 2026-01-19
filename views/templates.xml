@@ -13,8 +13,10 @@
              t-att-data-amount="amount"
              t-att-data-category-ids="category_ids if category_ids else ''">
             
-            <!-- Hidden inputs required by Odoo payment system -->
+            <!-- Hidden inputs for Odoo payment system -->
             <input type="hidden" name="o_payment_submit_button_hidden" value="1"/>
+            <input type="hidden" name="provider_id" t-att-value="provider_sudo.id if provider_sudo else ''"/>
+            <input type="hidden" name="provider_code" value="mews_pos"/>
             
             <div class="row">
                 <!-- SOL:  Kart bilgileri -->
@@ -80,6 +82,8 @@
 
                     <div class="mt-3">
                         <h6 class="mb-2">Taksit Seçenekleri</h6>
+                        <input type="hidden" id="mews_installment_selected" name="mews_installment_count" value="1"/>
+                        <input type="hidden" id="mews_bin_number" name="mews_bin_number" value=""/>
                         <div id="mews_installment_container"
                              class="border rounded p-2"
                              t-att-data-amount="amount">
