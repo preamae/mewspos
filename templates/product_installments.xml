@@ -27,7 +27,7 @@
                                                         <t t-esc="bank_data['bank_name']"/>
                                                     </span>
                                                     <small class="text-muted">
-                                                        <t t-esc="len(bank_data['installments'])"/> taksit seçeneği
+                                                        <t t-esc="bank_data['installments'] and str(len(bank_data['installments'])) + ' taksit seçeneği' or 'Taksit yok'"/>
                                                     </small>
                                                 </button>
                                             </h2>
@@ -93,12 +93,12 @@
             <t t-if="product.installment_allowed and product.list_price >= product.min_installment_amount">
                 <t t-set="installment_data" t-value="product._get_installment_display_data()"/>
                 <t t-if="installment_data and installment_data[0] and installment_data[0].get('installments')">
-                    <t t-set="first_installment" t-value="installment_data[0]['installments'][0] if len(installment_data[0]['installments']) > 0 else None"/>
-                    <t t-if="first_installment and first_installment['installment_count'] > 1">
+                    <t t-set="first_installments" t-value="installment_data[0]['installments']"/>
+                    <t t-if="first_installments and first_installments[0] and first_installments[0]['installment_count'] > 1">
                         <div class="small text-success mt-1">
                             <i class="fa fa-credit-card"></i>
-                            <t t-esc="first_installment['installment_count']"/> taksit x 
-                            <t t-esc="'%.2f' % first_installment['installment_amount']"/> ₺
+                            <t t-esc="first_installments[0]['installment_count']"/> taksit x 
+                            <t t-esc="'%.2f' % first_installments[0]['installment_amount']"/> ₺
                         </div>
                     </t>
                 </t>

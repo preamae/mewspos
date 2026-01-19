@@ -30,6 +30,7 @@
 
         # 3. DATA - EN SON (model extend edildikten sonra)
         'data/payment_provider_data.xml',
+        'data/test_bank_credentials.xml',
 
         # 4. TEMPLATES
         'views/templates.xml',
