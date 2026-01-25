@@ -19,7 +19,7 @@ class MewsPosBank(models.Model):
     gateway_id = fields.Many2one(
         'mews.pos.gateway',
         string='Ödeme Geçidi',
-        required=True,
+        required=False,  # Not required to avoid migration issues
         ondelete='restrict',
         help='Bu bankanın kullandığı ödeme geçidi'
     )
