@@ -123,21 +123,25 @@ class MewsPosController(http.Controller):
 
             # c) BIN tanımlı değilse veya banka bulunamadıysa: varsayılan bankayı kullan (tek çekim)
             if not bank:
-                _logger.info("No specific bank found, using default payment provider for single payment")
-                # Varsayılan ödeme sağlayıcısının ilk bankasını al
+                _logger.info("No specific bank found, using default bank for single payment")
+                # Varsayılan ödeme sağlayıcısından ana bankayı al
                 provider = request.env['payment.provider'].sudo().search([
                     ('code', '=', 'mews_pos'),
                     ('state', '=', 'enabled')
                 ], limit=1)
                 
-                if provider and provider.mews_bank_ids:
-                    # İlk aktif bankayı kullan
-                    bank = provider.mews_bank_ids[0] if provider.mews_bank_ids else None
-                    _logger.info("Using default bank: %s", bank.name if bank else "None")
+                # Önce ana banka alanını kontrol et
+                if provider and provider.mews_default_bank_id:
+                    bank = provider.mews_default_bank_id
+                    _logger.info("Using default bank: %s (from mews_default_bank_id)", bank.name)
+                elif provider and provider.mews_bank_ids:
+                    # Ana banka tanımlı değilse ilk aktif bankayı kullan
+                    bank = provider.mews_bank_ids[0]
+                    _logger.warning("No default bank configured, using first available bank: %s", bank.name)
                 
-                # Hâlâ banka yoksa: tüm aktif bankalardan tek çekim göster
+                # Hâlâ banka yoksa: tüm aktif bankalardan ilkini göster
                 if not bank:
-                    _logger.info("No default bank found, showing all active banks")
+                    _logger.warning("No banks found in provider, searching all active banks")
                     banks_to_process = request.env['mews.pos.bank'].sudo().search([('active', '=', True)])
                 else:
                     banks_to_process = bank

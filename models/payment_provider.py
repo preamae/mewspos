@@ -22,6 +22,15 @@ class PaymentProvider(models.Model):
         help='Bu ödeme sağlayıcısı için kullanılabilir bankalar'
     )
     
+    # Default/Main bank for fallback
+    mews_default_bank_id = fields.Many2one(
+        'mews.pos.bank',
+        string='Ana Banka',
+        domain="[('id', 'in', mews_bank_ids)]",
+        help='Taksit sunulmayan kartlar için kullanılacak ana banka. '
+             'BIN tanımlı olmayan kartlarda tek çekim ödemesi bu banka ile yapılır.'
+    )
+    
     mews_show_installments = fields.Boolean(
         string='Taksit Seçeneklerini Göster',
         default=True,
@@ -47,6 +56,12 @@ class PaymentProvider(models.Model):
         help='Taksitli ödemeler için minimum sipariş tutarı'
     )
 
+    @api.onchange('mews_bank_ids')
+    def _onchange_mews_bank_ids(self):
+        """Ensure default bank is in the selected banks"""
+        if self.mews_default_bank_id and self.mews_default_bank_id not in self.mews_bank_ids:
+            self.mews_default_bank_id = False
+    
     def _get_compatible_providers(self, *args, **kwargs):
         """Include mews_pos in compatible providers"""
         providers = super()._get_compatible_providers(*args, **kwargs)

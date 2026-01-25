@@ -5,6 +5,7 @@ from . import payment_provider
 from . import payment_transaction
 
 # ✅ 2. SONRA DİĞER MODELLER
+from . import mews_pos_gateway
 from . import mews_pos_bank
 from . import mews_pos_bin
 from . import mews_pos_installment_config

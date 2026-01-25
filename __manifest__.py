@@ -21,6 +21,7 @@
 
         # 2. VIEWS (Model extend) - DATA'DAN ÖNCE
         'views/payment_provider_views.xml',
+        'views/gateway_views.xml',
         'views/product_public_category_views.xml',
         'views/product_template_views.xml',
         'views/bin_views.xml',
@@ -30,6 +31,7 @@
 
         # 3. DATA - EN SON (model extend edildikten sonra)
         'data/payment_provider_data.xml',
+        'data/gateway_data.xml',
         'data/test_bank_credentials.xml',
 
         # 4. TEMPLATES

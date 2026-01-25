@@ -15,6 +15,16 @@ class MewsPosBank(models.Model):
     sequence = fields.Integer(string='Sıra', default=10)
     active = fields.Boolean(string='Aktif', default=True)
     
+    # Gateway reference (instead of selection)
+    gateway_id = fields.Many2one(
+        'mews.pos.gateway',
+        string='Ödeme Geçidi',
+        required=True,
+        ondelete='restrict',
+        help='Bu bankanın kullandığı ödeme geçidi'
+    )
+    
+    # Deprecated field - kept for backward compatibility
     gateway_type = fields.Selection([
         ('akbank_pos', 'Akbank POS'),
         ('estv3_pos', 'EST V3 POS (Payten/Asseco)'),
@@ -29,7 +39,13 @@ class MewsPosBank(models.Model):
         ('vakif_katilim', 'Vakıf Katılım POS'),
         ('tosla', 'Tosla'),
         ('param_pos', 'ParamPos'),
-    ], string='Gateway Tipi', required=True)
+    ], string='Gateway Tipi (Deprecated)', compute='_compute_gateway_type', store=True)
+    
+    @api.depends('gateway_id.code')
+    def _compute_gateway_type(self):
+        """Compute gateway_type from gateway_id for backward compatibility"""
+        for bank in self:
+            bank.gateway_type = bank.gateway_id.code if bank.gateway_id else False
     
     payment_model = fields.Selection([
         ('3d_secure', '3D Secure'),

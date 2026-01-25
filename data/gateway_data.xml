@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Payment Gateway Definitions -->
+        
+        <record id="gateway_akbank" model="mews.pos.gateway">
+            <field name="name">Akbank POS</field>
+            <field name="code">akbank_pos</field>
+            <field name="sequence">10</field>
+            <field name="supports_all_banks" eval="False"/>
+            <field name="description">Akbank tarafından sağlanan ödeme geçidi</field>
+        </record>
+        
+        <record id="gateway_estv3" model="mews.pos.gateway">
+            <field name="name">EST V3 POS (Payten/Asseco)</field>
+            <field name="code">estv3_pos</field>
+            <field name="sequence">20</field>
+            <field name="supports_all_banks" eval="False"/>
+            <field name="description">EST V3 protokolü ile çalışan POS sistemi (Payten/Asseco)</field>
+        </record>
+        
+        <record id="gateway_garanti" model="mews.pos.gateway">
+            <field name="name">Garanti BBVA POS</field>
+            <field name="code">garanti_pos</field>
+            <field name="sequence">30</field>
+            <field name="supports_all_banks" eval="False"/>
+            <field name="description">Garanti BBVA tarafından sağlanan ödeme geçidi</field>
+        </record>
+        
+        <record id="gateway_posnet" model="mews.pos.gateway">
+            <field name="name">PosNet (Yapı Kredi)</field>
+            <field name="code">posnet</field>
+            <field name="sequence">40</field>
+            <field name="supports_all_banks" eval="False"/>
+            <field name="description">Yapı Kredi PosNet sistemi</field>
+        </record>
+        
+        <record id="gateway_posnet_v1" model="mews.pos.gateway">
+            <field name="name">PosNet V1 (Albaraka)</field>
+            <field name="code">posnet_v1</field>
+            <field name="sequence">50</field>
+            <field name="supports_all_banks" eval="False"/>
+            <field name="description">PosNet V1 protokolü (Albaraka)</field>
+        </record>
+        
+        <record id="gateway_payfor" model="mews.pos.gateway">
+            <field name="name">PayFor (Finansbank)</field>
+            <field name="code">payfor</field>
+            <field name="sequence">60</field>
+            <field name="supports_all_banks" eval="False"/>
+            <field name="description">Finansbank PayFor sistemi</field>
+        </record>
+        
+        <record id="gateway_payflex_mpi" model="mews.pos.gateway">
+            <field name="name">PayFlex MPI (Ziraat/Vakıfbank)</field>
+            <field name="code">payflex_mpi</field>
+            <field name="sequence">70</field>
+            <field name="supports_all_banks" eval="False"/>
+            <field name="description">Ziraat ve Vakıfbank için PayFlex MPI</field>
+        </record>
+        
+        <record id="gateway_payflex_common" model="mews.pos.gateway">
+            <field name="name">PayFlex Common Payment</field>
+            <field name="code">payflex_common</field>
+            <field name="sequence">80</field>
+            <field name="supports_all_banks" eval="False"/>
+            <field name="description">PayFlex ortak ödeme sistemi</field>
+        </record>
+        
+        <record id="gateway_interpos" model="mews.pos.gateway">
+            <field name="name">InterPos (Denizbank)</field>
+            <field name="code">interpos</field>
+            <field name="sequence">90</field>
+            <field name="supports_all_banks" eval="False"/>
+            <field name="description">Denizbank InterPos sistemi</field>
+        </record>
+        
+        <record id="gateway_kuveyt" model="mews.pos.gateway">
+            <field name="name">Kuveyt Türk POS</field>
+            <field name="code">kuveyt_pos</field>
+            <field name="sequence">100</field>
+            <field name="supports_all_banks" eval="False"/>
+            <field name="description">Kuveyt Türk ödeme geçidi</field>
+        </record>
+        
+        <record id="gateway_vakif_katilim" model="mews.pos.gateway">
+            <field name="name">Vakıf Katılım POS</field>
+            <field name="code">vakif_katilim</field>
+            <field name="sequence">110</field>
+            <field name="supports_all_banks" eval="False"/>
+            <field name="description">Vakıf Katılım ödeme geçidi</field>
+        </record>
+        
+        <record id="gateway_tosla" model="mews.pos.gateway">
+            <field name="name">Tosla / ParamPos</field>
+            <field name="code">tosla</field>
+            <field name="sequence">120</field>
+            <field name="supports_all_banks" eval="True"/>
+            <field name="description">Tosla / ParamPos - Tüm bankaları destekler</field>
+        </record>
+        
+        <record id="gateway_param_pos" model="mews.pos.gateway">
+            <field name="name">ParamPos</field>
+            <field name="code">param_pos</field>
+            <field name="sequence">130</field>
+            <field name="supports_all_banks" eval="True"/>
+            <field name="description">ParamPos ödeme geçidi - Tüm bankaları destekler</field>
+        </record>
+        
+    </data>
+</odoo>

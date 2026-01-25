@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Gateway Tree View -->
+    <record id="view_mews_pos_gateway_tree" model="ir.ui.view">
+        <field name="name">mews.pos.gateway.tree</field>
+        <field name="model">mews.pos.gateway</field>
+        <field name="arch" type="xml">
+            <tree string="Ödeme Geçitleri">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="bank_count" string="Banka Sayısı"/>
+                <field name="supports_all_banks" widget="boolean_toggle"/>
+                <field name="active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Gateway Form View -->
+    <record id="view_mews_pos_gateway_form" model="ir.ui.view">
+        <field name="name">mews.pos.gateway.form</field>
+        <field name="model">mews.pos.gateway</field>
+        <field name="arch" type="xml">
+            <form string="Ödeme Geçidi">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object"
+                                class="oe_stat_button" icon="fa-archive">
+                            <field name="active" widget="boolean_button"
+                                   options='{"terminology": "archive"}'/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Gateway Adı"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="supports_all_banks"/>
+                            <field name="bank_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Açıklama">
+                            <field name="description" placeholder="Gateway hakkında açıklama..."/>
+                        </page>
+                        <page string="Bankalar" attrs="{'invisible': [('supports_all_banks', '=', True)]}">
+                            <field name="bank_ids">
+                                <tree>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="code"/>
+                                    <field name="payment_model"/>
+                                    <field name="active" widget="boolean_toggle"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Gateway Action -->
+    <record id="action_mews_pos_gateway" model="ir.actions.act_window">
+        <field name="name">Ödeme Geçitleri</field>
+        <field name="res_model">mews.pos.gateway</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Yeni Ödeme Geçidi Tanımlayın
+            </p>
+            <p>
+                Ödeme geçitleri, sanal POS sistemlerini temsil eder.
+                Her banka bir ödeme geçidi ile ilişkilendirilir.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_mews_pos_gateway"
+              name="Ödeme Geçitleri"
+              parent="menu_mews_pos_configuration"
+              action="action_mews_pos_gateway"
+              sequence="5"/>
+              
+</odoo>
