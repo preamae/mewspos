@@ -13,5 +13,6 @@ access_mews_pos_refund,mews.pos.refund.user,model_mews_pos_refund,base.group_use
 access_mews_pos_refund_manager,mews.pos.refund.manager,model_mews_pos_refund,account.group_account_manager,1,1,1,1
 access_mews_pos_transaction_report,mews.pos.transaction.report.user,model_mews_pos_transaction_report,base.group_user,1,0,0,0
 access_mews_pos_installment_calculator_wizard,mews.pos.installment.calculator.wizard.user,model_mews_pos_installment_calculator_wizard,base.group_user,1,1,1,1
-access_mews_pos_refund_wizard,mews.pos.refund.wizard.user,model_mews_pos_refund_wizard,base.group_user,1,1,1,1access_mews_pos_gateway_user,access_mews_pos_gateway_user,model_mews_pos_gateway,base.group_user,1,0,0,0
+access_mews_pos_refund_wizard,mews.pos.refund.wizard.user,model_mews_pos_refund_wizard,base.group_user,1,1,1,1
+access_mews_pos_gateway_user,access_mews_pos_gateway_user,model_mews_pos_gateway,base.group_user,1,0,0,0
 access_mews_pos_gateway_manager,access_mews_pos_gateway_manager,model_mews_pos_gateway,base.group_system,1,1,1,1
