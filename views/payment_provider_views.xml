@@ -260,9 +260,14 @@
               parent="mews_pos_menu_root"
               sequence="10"/>
 
+    <menuitem id="menu_mews_pos_configuration"
+              name="Yapılandırma"
+              parent="mews_pos_menu_root"
+              sequence="11"/>
+
     <menuitem id="mews_pos_menu_banks"
               name="Bankalar"
-              parent="mews_pos_menu_config"
+              parent="menu_mews_pos_configuration"
               action="mews_pos_bank_action"
               sequence="10"/>
 

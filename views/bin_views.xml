@@ -56,7 +56,7 @@
     <!-- Menü -->
     <menuitem id="mews_pos_menu_bins"
               name="BIN Numaraları"
-              parent="mews_pos_menu_config"
+              parent="menu_mews_pos_configuration"
               action="mews_pos_bin_action"
               sequence="15"/>
 </odoo>
