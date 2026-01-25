@@ -106,13 +106,13 @@
     <!-- Menü Eklemeleri -->
     <menuitem id="mews_pos_menu_installments"
               name="Taksit Yapılandırması"
-              parent="mews_pos_menu_config"
+              parent="menu_mews_pos_configuration"
               action="mews_pos_installment_config_action"
               sequence="20"/>
 
     <menuitem id="mews_pos_menu_category_restrictions"
               name="Kategori Kısıtlamaları"
-              parent="mews_pos_menu_config"
+              parent="menu_mews_pos_configuration"
               action="mews_pos_category_restriction_action"
               sequence="30"/>
 </odoo>

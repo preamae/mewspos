@@ -79,7 +79,7 @@
                                            class="form-control" 
                                            name="card_number" 
                                            maxlength="16" 
-                                           required
+                                           required="required"
                                            placeholder="1234 5678 9012 3456"/>
                                 </div>
                             </div>
@@ -87,7 +87,7 @@
                             <div class="row mb-3">
                                 <div class="col-md-4">
                                     <label class="form-label">Son Kullanma Ay</label>
-                                    <select class="form-select" name="expiry_month" required>
+                                    <select class="form-select" name="expiry_month" required="required">
                                         <option value="">Ay</option>
                                         <t t-foreach="range(1, 13)" t-as="month">
                                             <option t-att-value="month">
@@ -98,7 +98,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Son Kullanma Yıl</label>
-                                    <select class="form-select" name="expiry_year" required>
+                                    <select class="form-select" name="expiry_year" required="required">
                                         <option value="">Yıl</option>
                                         <t t-foreach="range(datetime.now().year, datetime.now().year + 11)" t-as="year">
                                             <option t-att-value="str(year)[-2:]">
@@ -113,7 +113,7 @@
                                            class="form-control" 
                                            name="cvv" 
                                            maxlength="3" 
-                                           required
+                                           required="required"
                                            placeholder="123"/>
                                 </div>
                             </div>
@@ -124,7 +124,7 @@
                                     <input type="text" 
                                            class="form-control" 
                                            name="card_holder" 
-                                           required
+                                           required="required"
                                            placeholder="AD SOYAD"/>
                                 </div>
                             </div>
