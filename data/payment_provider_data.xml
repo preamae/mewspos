@@ -8,7 +8,7 @@
             <field name="name">Akbank</field>
             <field name="code">akbank</field>
             <field name="sequence">10</field>
-            <field name="gateway_type">akbank_pos</field>
+            <field name="gateway_id" ref="gateway_akbank"/>
             <field name="payment_model">3d_secure</field>
             <field name="environment">test</field>
             <field name="active" eval="True"/>
@@ -18,7 +18,7 @@
             <field name="name">Garanti BBVA</field>
             <field name="code">garanti</field>
             <field name="sequence">20</field>
-            <field name="gateway_type">garanti_pos</field>
+            <field name="gateway_id" ref="gateway_garanti"/>
             <field name="payment_model">3d_secure</field>
             <field name="environment">test</field>
             <field name="active" eval="True"/>
@@ -28,7 +28,7 @@
             <field name="name">YapıKredi</field>
             <field name="code">yapikredi</field>
             <field name="sequence">30</field>
-            <field name="gateway_type">posnet</field>
+            <field name="gateway_id" ref="gateway_posnet"/>
             <field name="payment_model">3d_secure</field>
             <field name="environment">test</field>
             <field name="active" eval="True"/>
@@ -38,7 +38,7 @@
             <field name="name">İşbank</field>
             <field name="code">isbank</field>
             <field name="sequence">40</field>
-            <field name="gateway_type">estv3_pos</field>
+            <field name="gateway_id" ref="gateway_estv3"/>
             <field name="payment_model">3d_secure</field>
             <field name="environment">test</field>
             <field name="active" eval="True"/>

@@ -30,8 +30,9 @@
         'views/refund_wizard_views.xml',
 
         # 3. DATA - EN SON (model extend edildikten sonra)
-        'data/payment_provider_data.xml',
+        # Gateway data MUST load first (banks reference gateways)
         'data/gateway_data.xml',
+        'data/payment_provider_data.xml',
         'data/test_bank_credentials.xml',
 
         # 4. TEMPLATES
