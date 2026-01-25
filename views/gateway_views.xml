@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Gateway Tree View -->
+    <!-- Gateway List View -->
     <record id="view_mews_pos_gateway_tree" model="ir.ui.view">
         <field name="name">mews.pos.gateway.tree</field>
         <field name="model">mews.pos.gateway</field>
         <field name="arch" type="xml">
-            <tree string="Ödeme Geçitleri">
+            <list string="Ödeme Geçitleri">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="code"/>
                 <field name="bank_count" string="Banka Sayısı"/>
                 <field name="supports_all_banks" widget="boolean_toggle"/>
                 <field name="active" widget="boolean_toggle"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -49,15 +49,15 @@
                         <page string="Açıklama">
                             <field name="description" placeholder="Gateway hakkında açıklama..."/>
                         </page>
-                        <page string="Bankalar" attrs="{'invisible': [('supports_all_banks', '=', True)]}">
+                        <page string="Bankalar" invisible="supports_all_banks">
                             <field name="bank_ids">
-                                <tree>
+                                <list>
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="code"/>
                                     <field name="payment_model"/>
                                     <field name="active" widget="boolean_toggle"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                     </notebook>
@@ -88,5 +88,4 @@
               parent="menu_mews_pos_configuration"
               action="action_mews_pos_gateway"
               sequence="5"/>
-              
 </odoo>
